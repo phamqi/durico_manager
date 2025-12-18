@@ -1,0 +1,91 @@
+import { useRef, useState } from "react";
+import { Dimensions } from "react-native";
+import {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
+  Dimensions.get("window");
+
+export function useAnchoredModalReanimated() {
+  const anchorRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(0.9);
+  const opacity = useSharedValue(0);
+  const origin = useRef({ x: 0, y: 0 });
+
+  const open = () => {
+    anchorRef.current?.measureInWindow((x, y, w, h) => {
+      const ox = x + w / 2;
+      const oy = y + h / 2;
+      origin.current = { x: ox, y: oy };
+
+      translateX.value = ox - SCREEN_WIDTH / 2;
+      translateY.value = oy - SCREEN_HEIGHT / 2;
+      scale.value = 0.1;
+      opacity.value = 0.7;
+
+      setVisible(true);
+
+      translateX.value = withSpring(0, {
+        damping: 90,
+        stiffness: 300,
+      });
+      translateY.value = withSpring(0, {
+        damping: 90,
+        stiffness: 300,
+      });
+      scale.value = withSpring(1, {
+        damping: 90,
+        stiffness: 300,
+      });
+      opacity.value = withTiming(1, { duration: 220 });
+    });
+  };
+
+  const close = () => {
+  const { x, y } = origin.current;
+
+  translateX.value = withSpring(x - SCREEN_WIDTH / 2, {
+    damping: 60,
+    stiffness: 300,
+  });
+
+  translateY.value = withSpring(y - SCREEN_HEIGHT / 2, {
+    damping: 60,
+    stiffness: 300,
+  });
+
+  scale.value = withSpring( 0.1 , {
+    damping: 60,
+    stiffness: 150,
+  });
+
+  opacity.value = withTiming(0, { duration: 220 }, () => {
+    runOnJS(setVisible)(false);
+  });
+};
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  return {
+    anchorRef,
+    visible,
+    open,
+    close,
+    animatedStyle,
+  };
+}

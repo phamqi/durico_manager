@@ -3,14 +3,16 @@ import CustomTabBar from "../../components/CustomTabBar";
 
 export default function RootLayout() {
   return (
-    <Tabs tabBar={(props) => <CustomTabBar {...props} />}>
+    <Tabs tabBar={(props) => <CustomTabBar/>}>
       <Tabs.Screen
         name="index"
-        options={{ headerShown: false, title: "Home" }}
+        options={{ headerShown: false, title: "Home"
+         }}
       />
       <Tabs.Screen
         name="add"
-        options={{ headerShown: false, title: "Add" }}
+        options={{ headerShown: false, title: "Add"
+        }} 
       />
     </Tabs>
   );
