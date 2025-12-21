@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { getWorkersByYear, initDB, insertWorker } from "../database";
+import { deleteWorker, getPriceByYear, getWorkersByYear, initDB, insertPrice, insertWorker, updateWorkerName } from "../database";
 const StateContext = createContext(null);
 
 export const StateProvider = ({ children }) => {
   const [colorArray, setColorArray] = useState([]);
   const [color, setColor] = useState("black");
+  const [price, setPrice] = useState();
   const [loading,setLoading ] = useState(false);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -16,22 +17,41 @@ export const StateProvider = ({ children }) => {
       await initDB();
       const rows = await getWorkersByYear(selectedYear);
       setColorArray(rows);
-      console.log(rows);
       setLoading(false);
     })();
   }, []);
 
-  const addWorker = async ( name, color, totalWeightning, price) => {
+  const addWorker = async ( name, color, totalWeightning) => {
+    
     await insertWorker(
       selectedYear,
       name,
       color,
-      totalWeightning,
-      price
+      totalWeightning
     );
     const rows = await getWorkersByYear(selectedYear);
     setColorArray(rows);
   };
+
+  const updateWorker = async ( id, name) => {
+    await updateWorkerName(
+      id, name
+    );
+    const rows = await getWorkersByYear(selectedYear);
+    setColorArray(rows);
+  }
+  const removeWorker = async (id) => {
+    await deleteWorker(id);
+    const rows = await getWorkersByYear(selectedYear);
+    setColorArray(rows);
+  }
+  const addPrice = async (amount)=> {
+    const parseAmount = parseInt(amount, 10);
+    await insertPrice(selectedYear, parseAmount);
+    const rows = await getPriceByYear(selectedYear);
+    console.log("price", typeof parseAmount, rows);
+    setPrice(rows);
+  }
   if(loading){
     return (
       <View style={{
@@ -51,7 +71,11 @@ export const StateProvider = ({ children }) => {
         color,
         setColor,
         setSelectedYear,
-        addWorker
+        addWorker,
+        updateWorker,
+        removeWorker,
+        addPrice,
+        price
       }}
     >
       {children}

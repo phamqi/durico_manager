@@ -1,13 +1,14 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 
 import { Portal } from "react-native-paper";
-import { PRESET_COLORS } from "../constants";
+import { DELETE_PIN, PRESET_COLORS, PRICE_COLOR } from "../constants";
 import { useDuricoAlert, useGlobalState } from "../context";
 
 export default function CustomTabBar() {
@@ -15,12 +16,13 @@ export default function CustomTabBar() {
   const isAddScreen = pathname === "/add";
   const insets = useSafeAreaInsets(); 
 
-  const { color, setColor, colorArray, setColorArray, addWorker } = useGlobalState();
+  const { color, setColor, colorArray, addWorker, updateWorker, removeWorker, addPrice } = useGlobalState();
   const [showPalette, setShowPalette] = useState(false);
 
-  const [showAddColor, setShowAddColor] = useState(false);
   const [tempColor, setTempColor] = useState(null);
   const [tempName, setTempName] = useState("");
+  const [isPrice, setIsPrice] = useState(false);
+
   const getColorName = (hex) => {
   const found = colorArray.find((c) => c.color === hex);
     return found ? found.name : "";
@@ -34,6 +36,10 @@ export default function CustomTabBar() {
       setColor(colorArray[0].color);
       setTempColor(colorArray[0].color);
       setTempName(colorArray[0].name || "");
+    } else {
+      setColor("black");
+      setTempColor("black");
+      setTempName("");
     }
   }, []);
 
@@ -53,18 +59,19 @@ export default function CustomTabBar() {
     >
       {isAddScreen ? (
         <View style={{ position: "relative" }}>
-          <TouchableOpacity onPress={() => setShowPalette((v) => !v)}>
-            <View
-              style={{
+          <TouchableOpacity 
+            onPress={() => setShowPalette((v) => !v)}
+            style={{
                 width: 28,
                 height: 28,
                 borderRadius: 14,
                 backgroundColor: color || "black",
+                overflow: 'hidden'
               }}
-            />
+            >
           </TouchableOpacity>
 
-          {showPalette && (
+          {showPalette && !addColorModal.visible && (
             <View
               style={{
                 position: "absolute",
@@ -143,30 +150,31 @@ export default function CustomTabBar() {
           color="black"
         />
       </TouchableOpacity>
+
+      {/* modal them mau */}
       {addColorModal.visible && 
         (
           <Portal>
             <View
-          style={{
-            flex: 1,
-            backgroundColor: "transparent",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Animated.View 
-            style={[
-              {
-                width: 260,
-                backgroundColor: "#fff",
-                borderRadius: 12,
-                padding: 16,
-                gap: 12,
-              }, addColorModal.animatedStyle,
-            ]
-            }
-            
-          >
+            style={{
+              flex: 1,
+              backgroundColor: "transparent",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            >
+            <Animated.View 
+              style={[
+                {
+                  width: 260,
+                  backgroundColor: "#fff",
+                  borderRadius: 12,
+                  padding: 16,
+                  gap: 12,
+                }, addColorModal.animatedStyle,
+              ]
+              }
+              >
               <Text style={{ fontWeight: "600", fontSize: 16 }}>
                 Thêm màu mới
               </Text>
@@ -182,75 +190,113 @@ export default function CustomTabBar() {
                     key={c}
                     onPress={() => {
                       setTempColor(c);
+                      setIsPrice(false);
+                      setColor(c);
                       const name = getColorName(c);
                       setTempName(name);
                     }}
-                  >
+                    >
                     <View
                       style={{
                         width: 28,
                         height: 28,
                         borderRadius: 14,
                         backgroundColor: c,
-                        borderWidth: c === tempColor ? 3 : 1,
-                        borderColor: c === tempColor ? "#000" : "#ccc",
+                        borderWidth: c === tempColor && !isPrice ? 2 : 1,
+                        borderColor: c === tempColor && !isPrice ? "#000" : "#ccc",
                       }}
                     />
                   </TouchableOpacity>
                 ))}
-              </View>
-              <TextInput
-                placeholder={
-                  tempName ? undefined : "Nhập tên cho màu này"
-                }
-                placeholderTextColor="rgba(0,0,0,0.4)"
-                value={tempName}
-                onChangeText={setTempName}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 8,
-                  paddingHorizontal: 10,
-                  height: 40,
-                }}
-              />
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "flex-end",
-                  gap: 20,
-                }}
-              >
-                <TouchableOpacity onPress={() => addColorModal.close()}>
-                  <Text>Huỷ</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    if (!tempName) {
-                      Alert.alert("Lỗi", "Vui lòng nhập tên màu");
-                      return;
-                    }
-                    setColorArray((prev) => {
-                      const existed = prev.find((c) => c.color === tempColor);
-                      if (existed) {
-                        return prev.map((c) =>
-                          c.color === tempColor
-                            ? { ...c, name: tempName }
-                            : c
-                        );
-                      }
-                      return [...prev, { color: tempColor, name: tempName }];
-                    });
-                    setColor(tempColor);
-                    addColorModal.close();
-                    addWorker(tempName, tempColor, 0, 0);
+                    setIsPrice(true);
+                    setTempName("");
+                  } }
+                  style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 14,
+                        backgroundColor: isPrice ? PRICE_COLOR.active : PRICE_COLOR.blur,
+                        borderWidth: 1,
+                        borderWidth: isPrice ? 2 : 1,
+                        borderColor: isPrice ? "#000" : "#ccc",
+                        alignItems: "center",
+                        justifyContent: 'center'
+                      }}
+                  >
+                  <MaterialIcons name="attach-money" size={24} color={PRICE_COLOR.icon} />
+                </TouchableOpacity>
+                </View>
+                <TextInput
+                  placeholder={
+                    tempName ? undefined : isPrice ? "Nhập giá tiền" : "Nhập tên cho màu này"
+                  }
+                  placeholderTextColor="rgba(0,0,0,0.4)"
+                  value={tempName}
+                  keyboardType={isPrice ? "numeric" : "default"}
+                  onChangeText={setTempName}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    height: 40,
+                  }}
+                />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    gap: 20,
                   }}
                 >
-                  <Text style={{ fontWeight: "600" }}>Lưu</Text>
-                </TouchableOpacity>
-              </View>
-          </Animated.View>
-        </View>
+                  <TouchableOpacity 
+                  onPress={() => {
+                    const existed = colorArray.find((c) => c.color === tempColor);
+                    if (tempName === DELETE_PIN){
+                      removeWorker(existed.id);
+                      setTempName("");
+                      setColor(colorArray[0]);
+                      }else{
+                      addColorModal.close();
+                    }}}>
+                    <Text>Huỷ</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!tempName || tempName.trim() === "") {
+                        alert.show(
+                          {
+                            title: "Thông báo",
+                            message: isPrice ? "Vui lòng nhập giá tiền" : "Vui lòng nhập tên màu",
+                            buttons: [{ text: "OK" }],
+                //             buttons: [
+                //   { text: "Huỷ" },
+                //   { text: "OK", onPress: addWorker },
+                // ],
+                          }
+                        )
+                        return;
+                      }
+                      const existed = colorArray.find((c) => c.color === tempColor);
+                      if(isPrice){
+                        addPrice(tempName);
+                        } else {
+                          setColor(tempColor)
+                          if(!existed){
+                            addWorker(tempName.trim(), tempColor, 0);
+                          } else {
+                            updateWorker(existed.id, tempName.trim());
+                          }
+                      }
+                    }}
+                    >
+                    <Text style={{ fontWeight: "600" }}>Lưu</Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </View>
         </Portal>
         )
       }

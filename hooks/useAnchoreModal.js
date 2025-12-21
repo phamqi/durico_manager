@@ -35,16 +35,19 @@ export function useAnchoredModalReanimated() {
       setVisible(true);
 
       translateX.value = withSpring(0, {
-        damping: 90,
-        stiffness: 300,
+        damping: 20,
+        stiffness: 200,
+        mass: 0.9
       });
       translateY.value = withSpring(0, {
-        damping: 90,
-        stiffness: 300,
+        damping: 20,
+        stiffness: 200,
+        mass: 0.9
       });
       scale.value = withSpring(1, {
-        damping: 90,
-        stiffness: 300,
+        damping: 20,
+        stiffness: 200,
+        mass: 0.9
       });
       opacity.value = withTiming(1, { duration: 220 });
     });
@@ -54,18 +57,21 @@ export function useAnchoredModalReanimated() {
   const { x, y } = origin.current;
 
   translateX.value = withSpring(x - SCREEN_WIDTH / 2, {
-    damping: 60,
-    stiffness: 300,
+    damping: 20,
+    stiffness: 200,
+    mass: 0.9
   });
 
   translateY.value = withSpring(y - SCREEN_HEIGHT / 2, {
-    damping: 60,
-    stiffness: 300,
+    damping: 20,
+    stiffness: 200,
+    mass: 0.9
   });
 
   scale.value = withSpring( 0.1 , {
-    damping: 60,
-    stiffness: 150,
+    damping: 20,
+    stiffness: 200,
+    mass: 0.9
   });
 
   opacity.value = withTiming(0, { duration: 220 }, () => {

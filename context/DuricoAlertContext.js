@@ -68,7 +68,6 @@ export const DuricoAlertProvider = ({ children }) => {
               ) : null}
             </View>
 
-            {/* BUTTONS */}
             <View
               style={{
                 flexDirection: "row",
