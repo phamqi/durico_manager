@@ -20,6 +20,7 @@ export function useAnchoredModalReanimated() {
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const origin = useRef({ x: 0, y: 0 });
+  const backdropOpacity = useSharedValue(0);
 
   const open = () => {
     anchorRef.current?.measureInWindow((x, y, w, h) => {
@@ -50,6 +51,7 @@ export function useAnchoredModalReanimated() {
         mass: 0.9
       });
       opacity.value = withTiming(1, { duration: 220 });
+      backdropOpacity.value = withTiming(1, { duration: 220 });
     });
   };
 
@@ -77,6 +79,7 @@ export function useAnchoredModalReanimated() {
   opacity.value = withTiming(0, { duration: 220 }, () => {
     runOnJS(setVisible)(false);
   });
+  backdropOpacity.value = withTiming(0, { duration: 220 });
 };
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -86,12 +89,15 @@ export function useAnchoredModalReanimated() {
       { scale: scale.value },
     ],
   }));
-
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
   return {
     anchorRef,
     visible,
     open,
     close,
     animatedStyle,
+    backdropStyle
   };
 }

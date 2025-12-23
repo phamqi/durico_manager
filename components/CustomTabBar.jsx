@@ -1,15 +1,14 @@
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, usePathname } from "expo-router";
+import { PiggyBank, Plus, SquareCheckBig, SquarePen } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Portal } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 
-import { Portal } from "react-native-paper";
 import { DELETE_PIN, PRESET_COLORS, PRICE_COLOR } from "../constants";
 import { useDuricoAlert, useGlobalState } from "../context";
+import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 
 export default function CustomTabBar() {
   const pathname = usePathname();
@@ -71,7 +70,7 @@ export default function CustomTabBar() {
             >
           </TouchableOpacity>
 
-          {showPalette && !addColorModal.visible && (
+          {showPalette && (
             <View
               style={{
                 position: "absolute",
@@ -90,8 +89,13 @@ export default function CustomTabBar() {
                   setShowPalette(false);
                   addColorModal.open();
                   }}
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 28
+                  }}
                   >
-                  <MaterialCommunityIcons name="plus" size={22} />
+                  <Plus size={22}/>
                 </TouchableOpacity>
               </View>
               {colorArray.map((c, i) => (
@@ -140,21 +144,41 @@ export default function CustomTabBar() {
         }}
         style={{ marginLeft: "auto" }}
       >
-        <MaterialCommunityIcons
-          name={
-            isAddScreen
-              ? "checkbox-marked-outline"
-              : "square-edit-outline"
-          }
-          size={28}
-          color="black"
-        />
+        {
+          isAddScreen ? 
+          <SquareCheckBig size={28}/> :
+          <SquarePen size={28} />
+        }
       </TouchableOpacity>
 
       {/* modal them mau */}
       {addColorModal.visible && 
         (
           <Portal>
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  left: 0,
+                }
+                , addColorModal.backdropStyle
+              ]}
+            >
+              <Pressable
+                onPress={()=> addColorModal.close()}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  left: 0,
+                  backgroundColor:'#00000022'
+                }}
+              />
+            </Animated.View>
             <View
             style={{
               flex: 1,
@@ -225,7 +249,7 @@ export default function CustomTabBar() {
                         justifyContent: 'center'
                       }}
                   >
-                  <MaterialIcons name="attach-money" size={24} color={PRICE_COLOR.icon} />
+                  <PiggyBank size={20} color={PRICE_COLOR.icon}/>
                 </TouchableOpacity>
                 </View>
                 <TextInput
@@ -242,6 +266,7 @@ export default function CustomTabBar() {
                     borderRadius: 8,
                     paddingHorizontal: 10,
                     height: 40,
+                    fontSize: 14,
                   }}
                 />
                 <View
@@ -266,21 +291,16 @@ export default function CustomTabBar() {
                   <TouchableOpacity
                     onPress={() => {
                       if (!tempName || tempName.trim() === "") {
-                        alert.show(
-                          {
-                            title: "Thông báo",
-                            message: isPrice ? "Vui lòng nhập giá tiền" : "Vui lòng nhập tên màu",
-                            buttons: [{ text: "OK" }],
-                //             buttons: [
-                //   { text: "Huỷ" },
-                //   { text: "OK", onPress: addWorker },
-                // ],
-                          }
-                        )
+                        alert.toast(isPrice  ? "Vui lòng nhập giá tiền" : "Vui lòng nhập tên")
                         return;
                       }
                       const existed = colorArray.find((c) => c.color === tempColor);
                       if(isPrice){
+                        const isValidNumber = (value) => /^[1-9][0-9]*$/.test(value);
+                        if(!isValidNumber(tempName)){
+                          alert.toast("Là số nguyên dương, bắt đầu khac 0")
+                            return;
+                        }
                         addPrice(tempName);
                         } else {
                           setColor(tempColor)

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+
 import { deleteWorker, getPriceByYear, getWorkersByYear, initDB, insertPrice, insertWorker, updateWorkerName } from "../database";
+import { useDuricoAlert } from "./DuricoAlertContext";
 const StateContext = createContext(null);
 
 export const StateProvider = ({ children }) => {
@@ -10,6 +12,8 @@ export const StateProvider = ({ children }) => {
   const [loading,setLoading ] = useState(false);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const alert = useDuricoAlert()
 
   useEffect(() => {
     setLoading(true);
@@ -22,35 +26,57 @@ export const StateProvider = ({ children }) => {
   }, []);
 
   const addWorker = async ( name, color, totalWeightning) => {
-    
-    await insertWorker(
-      selectedYear,
-      name,
-      color,
-      totalWeightning
-    );
-    const rows = await getWorkersByYear(selectedYear);
-    setColorArray(rows);
+    try {
+      await insertWorker(
+        selectedYear,
+        name,
+        color,
+        totalWeightning
+      );
+      const rows = await getWorkersByYear(selectedYear);
+      setColorArray(rows);
+      alert.toast("Thêm thành công");
+    } catch (error) {
+      alert.toast("Xảy ra lỗi, thêm thất bại");
+      console.log("addworker", error);
+    }
   };
 
   const updateWorker = async ( id, name) => {
-    await updateWorkerName(
-      id, name
-    );
-    const rows = await getWorkersByYear(selectedYear);
-    setColorArray(rows);
+    try {
+      await updateWorkerName(
+        id, name
+      );
+      const rows = await getWorkersByYear(selectedYear);
+      setColorArray(rows);
+      alert.toast("Cập nhập thành công");
+    } catch (error) {
+      alert.toast("Xảy ra lỗi, cập nhập thất bại")
+    }
+    
   }
   const removeWorker = async (id) => {
-    await deleteWorker(id);
-    const rows = await getWorkersByYear(selectedYear);
-    setColorArray(rows);
+    try {
+      await deleteWorker(id);
+      const rows = await getWorkersByYear(selectedYear);
+      setColorArray(rows);
+      alert.toast("Xoá thành công");
+    } catch (error) {
+      alert.toast("Xảy ra lỗi, xoá thất bại");
+    }
   }
   const addPrice = async (amount)=> {
-    const parseAmount = parseInt(amount, 10);
-    await insertPrice(selectedYear, parseAmount);
-    const rows = await getPriceByYear(selectedYear);
-    console.log("price", typeof parseAmount, rows);
-    setPrice(rows);
+    try {
+      const parseAmount = parseInt(amount, 10);
+      await insertPrice(selectedYear, parseAmount);
+      const rows = await getPriceByYear(selectedYear);
+      console.log("price", typeof parseAmount, rows);
+      setPrice(rows);
+      alert.toast("Thêm giá thành công");
+    } catch (error) {
+     ấlert.show("Xảy ra lỗi, thêm giá thất bại");
+    }
+    
   }
   if(loading){
     return (

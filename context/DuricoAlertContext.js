@@ -1,30 +1,54 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import {
-    Modal,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const DuricoAlertContext = createContext(null);
 
 export const DuricoAlertProvider = ({ children }) => {
   const [config, setConfig] = useState(null);
+  const [toastConfig, setToastConfig] = useState(null);
+  const toastTimer = useRef(null);
 
   const hide = () => setConfig(null);
-
   const show = (cfg) => {
     setConfig(cfg);
   };
 
+  const toast = (cfg) => {
+  const duration = cfg?.duration ?? 2000;
+  const message =
+    typeof cfg === "string" ? cfg : cfg.message;
+
+  if (toastTimer.current) {
+    clearTimeout(toastTimer.current);
+    toastTimer.current = null;
+  }
+
+  setToastConfig(null);
+
+  requestAnimationFrame(() => {
+    setToastConfig({ message });
+
+    toastTimer.current = setTimeout(() => {
+      setToastConfig(null);
+      toastTimer.current = null;
+    }, duration);
+  });
+};
+
   return (
-    <DuricoAlertContext.Provider value={{ show }}>
+    <DuricoAlertContext.Provider value={{ show , toast}}>
       {children}
 
       <Modal
         visible={!!config}
         transparent
         animationType="fade"
+        presentationStyle="overFullScreen"
       >
         <View
           style={{
@@ -42,11 +66,10 @@ export const DuricoAlertProvider = ({ children }) => {
               overflow: "hidden",
             }}
           >
-            {/* CONTENT */}
             <View style={{ padding: 16 }}>
               <Text
                 style={{
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: "600",
                   textAlign: "center",
                 }}
@@ -115,6 +138,33 @@ export const DuricoAlertProvider = ({ children }) => {
           </View>
         </View>
       </Modal>
+      {toastConfig && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 60,
+            left: 20,
+            right: 20,
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#333",
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 8,
+              maxWidth: "90%",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 14 }}>
+              {toastConfig.message}
+            </Text>
+          </View>
+        </View>
+      )}
     </DuricoAlertContext.Provider>
   );
 };

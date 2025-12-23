@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Provider as PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DuricoAlertProvider, StateProvider } from '../context';
@@ -19,15 +20,16 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <SafeAreaProvider>
         <PaperProvider>
+          <DuricoAlertProvider>
           <StateProvider>
-            <DuricoAlertProvider>
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', headerShown: false, }} />
               </Stack>
-            </DuricoAlertProvider>
+              <Toast/>
             <StatusBar style="auto" />
           </StateProvider>
+          </DuricoAlertProvider>
         </PaperProvider>
       </SafeAreaProvider>
     </ThemeProvider>
