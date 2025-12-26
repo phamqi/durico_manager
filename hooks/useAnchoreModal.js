@@ -10,6 +10,9 @@ import {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
   Dimensions.get("window");
+const MAX_RADIUS = Math.sqrt(
+  SCREEN_WIDTH * SCREEN_WIDTH + SCREEN_HEIGHT * SCREEN_HEIGHT
+);
 
 export function useAnchoredModalReanimated() {
   const anchorRef = useRef(null);
@@ -20,6 +23,7 @@ export function useAnchoredModalReanimated() {
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const origin = useRef({ x: 0, y: 0 });
+  const backdropScale = useSharedValue(0);
   const backdropOpacity = useSharedValue(0);
 
   const open = () => {
@@ -38,20 +42,27 @@ export function useAnchoredModalReanimated() {
       translateX.value = withSpring(0, {
         damping: 20,
         stiffness: 200,
-        mass: 0.9
+        mass: 1.1
       });
       translateY.value = withSpring(0, {
         damping: 20,
         stiffness: 200,
-        mass: 0.9
+        mass: 1.1
       });
       scale.value = withSpring(1, {
         damping: 20,
         stiffness: 200,
-        mass: 0.9
+        mass: 1.1
       });
       opacity.value = withTiming(1, { duration: 220 });
       backdropOpacity.value = withTiming(1, { duration: 220 });
+      backdropScale.value = withSpring(1, {
+      damping: 26,
+      stiffness: 50,
+      mass: 1.1
+    });
+
+
     });
   };
 
@@ -76,10 +87,11 @@ export function useAnchoredModalReanimated() {
     mass: 0.9
   });
 
-  opacity.value = withTiming(0, { duration: 220 }, () => {
+  opacity.value = withTiming(0, { duration: 200 }, () => {
     runOnJS(setVisible)(false);
   });
-  backdropOpacity.value = withTiming(0, { duration: 220 });
+  backdropOpacity.value = withTiming(0, { duration: 290 });
+  backdropScale.value = withTiming(0, { duration: 300 });
 };
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -91,6 +103,7 @@ export function useAnchoredModalReanimated() {
   }));
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
+    transform: [{ scale: backdropScale.value }],
   }));
   return {
     anchorRef,
@@ -98,6 +111,9 @@ export function useAnchoredModalReanimated() {
     open,
     close,
     animatedStyle,
-    backdropStyle
+    backdropStyle,
+    MAX_RADIUS, 
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT
   };
 }

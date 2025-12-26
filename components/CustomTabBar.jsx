@@ -159,10 +159,12 @@ export default function CustomTabBar() {
               style={[
                 {
                   position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  right: 0,
-                  left: 0,
+                  width: addColorModal.MAX_RADIUS * 2,
+                  height: addColorModal.MAX_RADIUS * 2,
+                  borderRadius: addColorModal.MAX_RADIUS,
+                  backgroundColor: "#00000022",
+                  left: addColorModal.SCREEN_WIDTH / 2 - addColorModal.MAX_RADIUS,
+                  top: addColorModal.SCREEN_HEIGHT / 2 - addColorModal.MAX_RADIUS,
                 }
                 , addColorModal.backdropStyle
               ]}
