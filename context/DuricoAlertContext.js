@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Portal } from "react-native-paper";
 
 const DuricoAlertContext = createContext(null);
 
@@ -139,31 +140,33 @@ export const DuricoAlertProvider = ({ children }) => {
         </View>
       </Modal>
       {toastConfig && (
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 60,
-            left: 20,
-            right: 20,
-            alignItems: "center",
-            zIndex: 9999,
-          }}
-        >
+        <Portal>
           <View
+            pointerEvents="none"
             style={{
-              backgroundColor: "#333",
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              borderRadius: 8,
-              maxWidth: "90%",
+              position: "absolute",
+              top: 60,
+              left: 20,
+              right: 20,
+              alignItems: "center",
+              zIndex: 9999,
             }}
           >
-            <Text style={{ color: "#fff", fontSize: 14 }}>
-              {toastConfig.message}
-            </Text>
+            <View
+              style={{
+                backgroundColor: "#333",
+                paddingHorizontal: 22,
+                paddingVertical: 10,
+                borderRadius: 8,
+                maxWidth: "90%",
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 14 }}>
+                {toastConfig.message}
+              </Text>
+            </View>
           </View>
-        </View>
+        </Portal>  
       )}
     </DuricoAlertContext.Provider>
   );
