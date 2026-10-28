@@ -1,93 +1,97 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
-import { deleteWorker, getPriceByYear, getWorkersByYear, initDB, insertPrice, insertWorker, updateWorkerName } from "../database";
+import {
+  createAmount,
+  deleteWorker,
+  getAmountByYear,
+  getWorkersByYear,
+  initDB,
+  insertWorker,
+  updateWorkerName,
+} from "../database";
 import { useDuricoAlert } from "./DuricoAlertContext";
 const StateContext = createContext(null);
 
 export const StateProvider = ({ children }) => {
   const [colorArray, setColorArray] = useState([]);
   const [color, setColor] = useState("black");
-  const [price, setPrice] = useState();
-  const [loading,setLoading ] = useState(false);
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-
-  const alert = useDuricoAlert()
+  const [currentWorker, setCurrentWorker] = useState();
+  const [amount, setAmount] = useState();
+  const [loading, setLoading] = useState(false);
+  const alert = useDuricoAlert();
 
   useEffect(() => {
     setLoading(true);
     (async () => {
       await initDB();
-      const rows = await getWorkersByYear(selectedYear);
+      const rows = await getWorkersByYear();
       setColorArray(rows);
+      const amount = await getAmountByYear();
+      setAmount(amount);
       setLoading(false);
     })();
   }, []);
 
-  const addWorker = async ( name, color, totalWeightning) => {
+  const addWorker = async (name, color, totalWeightning) => {
     try {
-      await insertWorker(
-        selectedYear,
-        name,
-        color,
-        totalWeightning
-      );
-      const rows = await getWorkersByYear(selectedYear);
+      await insertWorker(name, color, totalWeightning);
+      const rows = await getWorkersByYear();
       setColorArray(rows);
       alert.toast("Thêm thành công");
+      console.log("add wordker", rows);
     } catch (error) {
       alert.toast("Xảy ra lỗi, thêm thất bại");
-      console.log("addworker", error);
+      console.log("sateContext.js addworker", error);
     }
   };
 
-  const updateWorker = async ( id, name) => {
+  const updateWorker = async (id, name) => {
     try {
-      await updateWorkerName(
-        id, name
-      );
-      const rows = await getWorkersByYear(selectedYear);
+      await updateWorkerName(id, name);
+      const rows = await getWorkersByYear();
       setColorArray(rows);
       alert.toast("Cập nhập thành công");
     } catch (error) {
-      alert.toast("Xảy ra lỗi, cập nhập thất bại")
+      alert.toast("Xảy ra lỗi, cập nhập thất bại");
+      console.log("sateContext.js updateworker", error);
     }
-    
-  }
+  };
   const removeWorker = async (id) => {
     try {
       await deleteWorker(id);
-      const rows = await getWorkersByYear(selectedYear);
+      const rows = await getWorkersByYear();
       setColorArray(rows);
       alert.toast("Xoá thành công");
     } catch (error) {
       alert.toast("Xảy ra lỗi, xoá thất bại");
+      console.log("sateContext.js removeworker", error);
     }
-  }
-  const addPrice = async (amount)=> {
+  };
+  const createAmountContext = async (amount) => {
     try {
       const parseAmount = parseInt(amount, 10);
-      await insertPrice(selectedYear, parseAmount);
-      const rows = await getPriceByYear(selectedYear);
-      console.log("price", typeof parseAmount, rows);
-      setPrice(rows);
+      await createAmount(parseAmount);
+      const rows = await getAmountByYear();
+      setAmount(rows);
       alert.toast("Thêm giá thành công");
     } catch (error) {
-     ấlert.show("Xảy ra lỗi, thêm giá thất bại");
+      alert.toast("Xảy ra lỗi, thêm giá thất bại");
+      console.log("sateContext.js addPrice", error);
     }
-    
-  }
-  if(loading){
+  };
+  if (loading) {
     return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <ActivityIndicator size='large' />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator size="large" />
       </View>
-    ) 
+    );
   }
   return (
     <StateContext.Provider
@@ -96,12 +100,13 @@ export const StateProvider = ({ children }) => {
         setColorArray,
         color,
         setColor,
-        setSelectedYear,
         addWorker,
         updateWorker,
         removeWorker,
-        addPrice,
-        price
+        createAmountContext,
+        amount,
+        currentWorker,
+        setCurrentWorker,
       }}
     >
       {children}

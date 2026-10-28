@@ -5,23 +5,23 @@ let db = null;
 export const initDB = async () => {
   db = await SQLite.openDatabaseAsync("durico_app.db");
   await db.execAsync(`DROP TABLE IF EXISTS worker;`);
-  await db.execAsync(`DROP TABLE IF EXISTS price`)
+  await db.execAsync(`DROP TABLE IF EXISTS amount`);
   await db.execAsync(`
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS worker (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      year INTEGER NOT NULL,
-      create_at INTEGER NOT NULL,
+      year TEXT NOT NULL,
+      create_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       name TEXT NOT NULL,
       color TEXT NOT NULL,
       total_weightning INTEGER NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS price (
+    CREATE TABLE IF NOT EXISTS amount (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      year INTEGER NOT NULL,
+      year TEXT UNIQUE NOT NULL,
       amount INTEGER NOT NULL,
-      create_at INTEGER NOT NULL,
-      update_at TEXT
+      create_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      update_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
