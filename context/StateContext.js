@@ -20,6 +20,38 @@ export const StateProvider = ({ children }) => {
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(false);
   const alert = useDuricoAlert();
+  const getDate = () => {
+    const date = new Date().toLocaleDateString("vi-VN");
+    const id = date.toString() + Date.now().toString(36);
+    return id;
+  };
+  const [columnsData, setColumnsData] = useState([
+    {
+      id: getDate(),
+      inputs: [
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+      ],
+      result: "0",
+    },
+  ]);
+  const addColumn = () => {
+    const newCol = {
+      id: getDate(),
+      inputs: [
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+        { value: "", workerId: null, color: null },
+      ],
+      result: "0",
+    };
+    setColumnsData([...columnsData, newCol]);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -107,6 +139,9 @@ export const StateProvider = ({ children }) => {
         amount,
         currentWorker,
         setCurrentWorker,
+        columnsData,
+        setColumnsData,
+        addColumn,
       }}
     >
       {children}

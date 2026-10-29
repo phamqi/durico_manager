@@ -86,7 +86,7 @@ export default function CustomTabBar() {
               width: 28,
               height: 28,
               borderRadius: 14,
-              backgroundColor: currentWorker.color || "black",
+              backgroundColor: currentWorker?.color || PRESET_COLORS[0],
               overflow: "hidden",
             }}
           ></TouchableOpacity>

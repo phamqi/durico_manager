@@ -4,15 +4,15 @@
     "strict": true,
     "jsx": "react-native",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "components/CustomTabBar.jsx"  ]
+    "expo-env.d.ts",
+    "components/CustomTabBar.jsx",
+    "app/(tabs)/add.jsx"
+  ]
 }
