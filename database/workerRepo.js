@@ -16,7 +16,7 @@ export const insertWorker = async (name, color, totalWeightning) => {
   }
 };
 
-export const getWorkersByYear = async (year) => {
+export const getWorkersByYear = async () => {
   try {
     const db = getDB();
     if (!db) return [];

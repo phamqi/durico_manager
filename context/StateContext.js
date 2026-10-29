@@ -3,8 +3,11 @@ import { ActivityIndicator, View } from "react-native";
 
 import {
   createAmount,
+  createTransactionWithDetails,
   deleteWorker,
   getAmountByYear,
+  getTransactions,
+  getTransactionsDetails,
   getWorkersByYear,
   initDB,
   insertWorker,
@@ -27,28 +30,28 @@ export const StateProvider = ({ children }) => {
   };
   const [columnsData, setColumnsData] = useState([
     {
-      id: getDate(),
+      id: Date.now(),
       inputs: [
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
       ],
-      result: "0",
+      result: 0,
     },
   ]);
   const addColumn = () => {
     const newCol = {
-      id: getDate(),
+      id: Date.now(),
       inputs: [
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
-        { value: "", workerId: null, color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
+        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
       ],
-      result: "0",
+      result: 0,
     };
     setColumnsData([...columnsData, newCol]);
   };
@@ -112,6 +115,25 @@ export const StateProvider = ({ children }) => {
       console.log("sateContext.js addPrice", error);
     }
   };
+  const createTransaction = async (details) => {
+    try {
+      await createTransactionWithDetails(details);
+      alert.toast("Thêm lich su thành công");
+    } catch (error) {
+      alert.toast("Xảy ra lỗi, thêm giá thất bại");
+      console.log("sateContext.js addPrice", error);
+    }
+  };
+  const getTransactionsData = async () => {
+    try {
+      const rows = await getTransactions();
+      const row = await getTransactionsDetails();
+      console.log("bcd", row.toString());
+      console.log("hjlk", rows.toString());
+    } catch (error) {
+      console.log("getTransec stateContext", error);
+    }
+  };
   if (loading) {
     return (
       <View
@@ -142,6 +164,8 @@ export const StateProvider = ({ children }) => {
         columnsData,
         setColumnsData,
         addColumn,
+        createTransaction,
+        getTransactionsData,
       }}
     >
       {children}

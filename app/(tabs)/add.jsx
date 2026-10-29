@@ -18,6 +18,7 @@ export default function AddScreen() {
     colorArray,
     currentWorker,
     setCurrentWorker,
+    getTransactionsData,
   } = useGlobalState();
 
   const [itemHeight, setItemHeight] = useState(null);
@@ -32,13 +33,14 @@ export default function AddScreen() {
     const updatedData = [...columnsData];
     updatedData[colIndex].inputs[inputIndex] = {
       ...updatedData[colIndex].inputs[inputIndex],
-      value: text,
-      workerId: currentWorker ? currentWorker.id : null,
-      color: currentWorker ? currentWorker.color : null,
+      weight: text,
+      worker_id: currentWorker ? currentWorker.id : null,
+      worker_name: currentWorker ? currentWorker.name : null,
+      worker_color: currentWorker ? currentWorker.color : null,
     };
 
     const sum = updatedData[colIndex].inputs.reduce(
-      (acc, item) => acc + (parseFloat(item.value) || 0),
+      (acc, item) => acc + (parseFloat(item.weight) || 0),
       0,
     );
     updatedData[colIndex].result = sum.toString();
@@ -151,21 +153,21 @@ export default function AddScreen() {
                       textAlignVertical: "center",
                       marginBottom: 4,
                       fontSize: 16,
-                      backgroundColor: inputItem.color || "#fff",
+                      backgroundColor: inputItem.worker_color || "#fff",
                       color: "#333333",
                       fontWeight: "600",
                     }}
                     placeholder={`Ô ${inputIdx + 1}`}
                     placeholderTextColor="#aaa"
                     keyboardType="numeric"
-                    value={inputItem.value}
+                    value={inputItem.weight}
                     onChangeText={(text) =>
                       handleInputChange(text, index, inputIdx)
                     }
                     onFocus={() => {
-                      if (inputItem.workerId) {
+                      if (inputItem.worker_id) {
                         const foundWorker = colorArray.find(
-                          (w) => w.id === inputItem.workerId,
+                          (w) => w.id === inputItem.worker_id,
                         );
                         if (foundWorker) {
                           setCurrentWorker(foundWorker);
@@ -241,7 +243,7 @@ export default function AddScreen() {
                   Tổng kết chung
                 </Text>
               </View>
-              {/* <TouchableOpacity
+              <TouchableOpacity
                 style={{
                   backgroundColor: "#007AFF",
                   padding: 12,
@@ -249,14 +251,14 @@ export default function AddScreen() {
                   alignItems: "center",
                   marginBottom: 15,
                 }}
-                onPress={addColumn}
+                onPress={getTransactionsData}
               >
                 <Text
                   style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}
                 >
                   + Thêm tổ hợp cột
                 </Text>
-              </TouchableOpacity> */}
+              </TouchableOpacity>
               <View
                 style={{
                   marginTop: 4,

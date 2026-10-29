@@ -37,6 +37,9 @@ export default function CustomTabBar() {
     amount,
     currentWorker,
     setCurrentWorker,
+    columnsData,
+    createTransaction,
+    getTransactionsData,
   } = useGlobalState();
   const [showPalette, setShowPalette] = useState(false);
 
@@ -151,15 +154,7 @@ export default function CustomTabBar() {
         hitSlop={10}
         onPress={() => {
           if (isAddScreen) {
-            alert.show({
-              title: "Alert Title",
-              message: "Lorem ipsum dolor sit amet",
-              buttons: [{ text: "OK" }],
-              //             buttons: [
-              //   { text: "Huỷ" },
-              //   { text: "OK", onPress: addWorker },
-              // ],
-            });
+            createTransaction(columnsData);
           } else {
             router.push("/add");
           }
@@ -234,7 +229,6 @@ export default function CustomTabBar() {
                     onPress={() => {
                       setTempColor(c);
                       setIsPrice(false);
-                      //setColor(c);
                       const name = getColorName(c);
                       setTempName(name);
                     }}
