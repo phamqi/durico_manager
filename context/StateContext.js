@@ -23,12 +23,7 @@ export const StateProvider = ({ children }) => {
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(false);
   const alert = useDuricoAlert();
-  const getDate = () => {
-    const date = new Date().toLocaleDateString("vi-VN");
-    const id = date.toString() + Date.now().toString(36);
-    return id;
-  };
-  const [columnsData, setColumnsData] = useState([
+  const getDefaultColumns = () => [
     {
       id: Date.now(),
       inputs: [
@@ -40,21 +35,20 @@ export const StateProvider = ({ children }) => {
       ],
       result: 0,
     },
-  ]);
-  const addColumn = () => {
-    const newCol = {
-      id: Date.now(),
-      inputs: [
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-      ],
-      result: 0,
-    };
-    setColumnsData([...columnsData, newCol]);
+  ];
+
+  const [columnsData, setColumnsData] = useState(getDefaultColumns);
+
+  const handleReset = () => {
+    setColumnsData(getDefaultColumns());
   };
+  const addColumn = () => {
+    setColumnsData((prev) => [...prev, createDefaultColumn()]);
+  };
+  const totalSummary = columnsData.reduce(
+    (acc, col) => acc + (parseFloat(col.result) || 0),
+    0,
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -70,23 +64,30 @@ export const StateProvider = ({ children }) => {
 
   const addWorker = async (name, color, totalWeightning) => {
     try {
-      await insertWorker(name, color, totalWeightning);
-      const rows = await getWorkersByYear();
-      setColorArray(rows);
-      alert.toast("Thêm thành công");
-      console.log("add wordker", rows);
+      if (!amount || amount.trim() === "") {
+        alert.toast("Vui lòng nhập tên");
+      } else {
+        await insertWorker(name.trim(), color, totalWeightning);
+        const rows = await getWorkersByYear();
+        setColorArray(rows);
+        alert.toast("Thêm thành công");
+      }
     } catch (error) {
       alert.toast("Xảy ra lỗi, thêm thất bại");
-      console.log("sateContext.js addworker", error);
+      console.log("sateContext.js addWorker", error);
     }
   };
 
   const updateWorker = async (id, name) => {
     try {
-      await updateWorkerName(id, name);
-      const rows = await getWorkersByYear();
-      setColorArray(rows);
-      alert.toast("Cập nhập thành công");
+      if (!name || name.trim() === "") {
+        alert.toast("Vui lòng nhập tên");
+      } else {
+        await updateWorkerName(id, name.trim());
+        const rows = await getWorkersByYear();
+        setColorArray(rows);
+        alert.toast("Cập nhập thành công");
+      }
     } catch (error) {
       alert.toast("Xảy ra lỗi, cập nhập thất bại");
       console.log("sateContext.js updateworker", error);
@@ -100,28 +101,42 @@ export const StateProvider = ({ children }) => {
       alert.toast("Xoá thành công");
     } catch (error) {
       alert.toast("Xảy ra lỗi, xoá thất bại");
-      console.log("sateContext.js removeworker", error);
+      console.log("sateContext.js removeWorker", error);
     }
   };
   const createAmountContext = async (amount) => {
     try {
-      const parseAmount = parseInt(amount, 10);
-      await createAmount(parseAmount);
-      const rows = await getAmountByYear();
-      setAmount(rows);
-      alert.toast("Thêm giá thành công");
+      const isValidNumber = (value) => /^[1-9][0-9]*$/.test(value);
+      if (!amount || amount.trim() === "") {
+        alert.toast("Vui lòng nhập giá tiền");
+      } else {
+        if (!isValidNumber(amount)) {
+          alert.toast("Là số nguyên dương, khác 0");
+          return;
+        } else {
+          const parseAmount = parseInt(amount, 10);
+          await createAmount(parseAmount);
+          const rows = await getAmountByYear();
+          setAmount(rows);
+          alert.toast("Thêm giá thành công");
+        }
+      }
     } catch (error) {
       alert.toast("Xảy ra lỗi, thêm giá thất bại");
       console.log("sateContext.js addPrice", error);
     }
   };
-  const createTransaction = async (details) => {
+  const createTransaction = async () => {
     try {
-      await createTransactionWithDetails(details);
-      alert.toast("Thêm lich su thành công");
+      if (totalSummary > 0) {
+        await createTransactionWithDetails(columnsData, totalSummary);
+        alert.toast("Thêm giao dịch thành công");
+      } else {
+        alert.toast("Vui lòng nhập đầy đủ thông tin");
+      }
     } catch (error) {
-      alert.toast("Xảy ra lỗi, thêm giá thất bại");
-      console.log("sateContext.js addPrice", error);
+      alert.toast("Xảy ra lỗi, thêm thất bại");
+      console.log("sateContext.js createTransatioin", error);
     }
   };
   const getTransactionsData = async () => {
@@ -166,6 +181,8 @@ export const StateProvider = ({ children }) => {
         addColumn,
         createTransaction,
         getTransactionsData,
+        totalSummary,
+        handleReset,
       }}
     >
       {children}

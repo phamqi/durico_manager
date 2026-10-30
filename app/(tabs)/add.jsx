@@ -19,6 +19,7 @@ export default function AddScreen() {
     currentWorker,
     setCurrentWorker,
     getTransactionsData,
+    totalSummary,
   } = useGlobalState();
 
   const [itemHeight, setItemHeight] = useState(null);
@@ -47,11 +48,6 @@ export default function AddScreen() {
 
     setColumnsData(updatedData);
   };
-
-  const totalSummary = columnsData.reduce(
-    (acc, col) => acc + (parseFloat(col.result) || 0),
-    0,
-  );
 
   return (
     <View style={{ flex: 1 }}>

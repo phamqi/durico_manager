@@ -154,7 +154,7 @@ export default function CustomTabBar() {
         hitSlop={10}
         onPress={() => {
           if (isAddScreen) {
-            createTransaction(columnsData);
+            createTransaction();
           } else {
             router.push("/add");
           }
@@ -254,7 +254,6 @@ export default function CustomTabBar() {
                         ? amount.toString()
                         : "",
                     );
-                    console.log("price touch", amount);
                   }}
                   style={{
                     width: 28,
@@ -327,31 +326,16 @@ export default function CustomTabBar() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    if (!tempName || tempName.trim() === "") {
-                      alert.toast(
-                        isPrice
-                          ? "Vui lòng nhập giá tiền"
-                          : "Vui lòng nhập tên",
-                      );
-                      return;
-                    }
                     const existed = colorArray.find(
                       (c) => c.color === tempColor,
                     );
                     if (isPrice) {
-                      const isValidNumber = (value) =>
-                        /^[1-9][0-9]*$/.test(value);
-                      if (!isValidNumber(tempName)) {
-                        alert.toast("Là số nguyên dương, bắt đầu khac 0");
-                        return;
-                      }
                       createAmountContext(tempName);
                     } else {
-                      //setColor(tempColor);
                       if (!existed) {
-                        addWorker(tempName.trim(), tempColor, 0);
+                        addWorker(tempName, tempColor, 0);
                       } else {
-                        updateWorker(existed.id, tempName.trim());
+                        updateWorker(existed.id, tempName);
                       }
                     }
                   }}
