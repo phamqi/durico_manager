@@ -135,7 +135,6 @@ export const StateProvider = ({ children }) => {
           selectedType,
         );
         alert.toast("Thêm giao dịch thành công");
-        handleReset();
       } else {
         alert.toast("Vui lòng nhập đầy đủ thông tin");
       }

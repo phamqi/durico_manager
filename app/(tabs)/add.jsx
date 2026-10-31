@@ -1,5 +1,5 @@
 import { usePathname } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -10,10 +10,9 @@ import {
 } from "react-native";
 import { Portal } from "react-native-paper";
 import Animated from "react-native-reanimated";
-import { useGlobalState } from "../../context";
+import { useDuricoAlert, useGlobalState } from "../../context";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
-
 export default function AddScreen() {
   const {
     columnsData,
@@ -26,8 +25,9 @@ export default function AddScreen() {
     totalSummary,
     selectedType,
     setSelectedType,
+    handleReset,
   } = useGlobalState();
-
+  const alert = useDuricoAlert();
   const typeModal = useAnchoredModalReanimated();
 
   const transactionTypes = [
@@ -68,7 +68,21 @@ export default function AddScreen() {
     transactionTypes.find((t) => t.value === selectedType)?.label ||
     "Chọn loại";
 
-  // Style đồng bộ kích thước chuẩn 48% cho mọi ô
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+
+  const handleResetPress = () => {
+    if (!isConfirmingReset) {
+      setIsConfirmingReset(true);
+      alert.toast("Chạm lần nữa để làm mới");
+      setTimeout(() => {
+        setIsConfirmingReset(false);
+      }, 3000);
+    } else {
+      handleReset();
+      setIsConfirmingReset(false);
+    }
+  };
+
   const cardStyle = {
     width: "48%",
     height: 248,
@@ -230,6 +244,7 @@ export default function AddScreen() {
                         flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        marginBottom: 8,
                       }}
                       onPress={() => typeModal.open()}
                     >
@@ -243,46 +258,53 @@ export default function AddScreen() {
                         {currentSelectedLabel}
                       </Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#007AFF",
+                        padding: 10,
+                        borderRadius: 6,
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                      onPress={addColumn}
+                    >
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontWeight: "bold",
+                          fontSize: 14,
+                        }}
+                      >
+                        + Thêm cột
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
 
               <View>
-                {/* Nút thêm tổ hợp cột */}
                 <TouchableOpacity
                   style={{
-                    backgroundColor: "#007AFF",
                     padding: 10,
                     borderRadius: 6,
                     alignItems: "center",
                     marginBottom: 8,
+                    borderWidth: 1,
+                    borderColor: "#FF3B30",
+                    backgroundColor: isConfirmingReset ? "#FF3B30" : "#f1f1f2",
                   }}
-                  onPress={addColumn}
+                  onPress={handleResetPress}
                 >
                   <Text
-                    style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}
+                    style={{
+                      color: isConfirmingReset ? "#FFF" : "#333",
+                      fontWeight: "bold",
+                    }}
                   >
-                    + Thêm cột
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#007AFF",
-                    padding: 10,
-                    borderRadius: 6,
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                  onPress={getTransactionsData}
-                >
-                  <Text
-                    style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}
-                  >
-                    Xem
+                    Làm mới
                   </Text>
                 </TouchableOpacity>
 
-                {/* Tổng kết */}
                 <View
                   style={{
                     padding: 6,
@@ -304,7 +326,7 @@ export default function AddScreen() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: "bold",
                       color: "#137333",
                     }}
