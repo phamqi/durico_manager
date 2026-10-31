@@ -58,7 +58,7 @@ export const StateProvider = ({ children }) => {
 
   const addWorker = async (name, color, totalWeightning) => {
     try {
-      if (!amount || amount.trim() === "") {
+      if (!name || name.trim() === "") {
         alert.toast("Vui lòng nhập tên");
       } else {
         await insertWorker(name.trim(), color, totalWeightning);

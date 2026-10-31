@@ -1,10 +1,5 @@
 import { router, usePathname } from "expo-router";
-import {
-  PiggyBank,
-  Plus,
-  SquareCheckBig,
-  SquarePen,
-} from "lucide-react-native";
+import { PiggyBank, SquareCheckBig, SquarePen } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Pressable,
@@ -20,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DELETE_PIN, PRESET_COLORS, PRICE_COLOR } from "../constants";
 import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
+import Palette from "./Palette";
 
 export default function CustomTabBar() {
   const pathname = usePathname();
@@ -98,56 +94,60 @@ export default function CustomTabBar() {
           ></TouchableOpacity>
 
           {showPalette && (
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                transform: [{ translateY: -40 }],
-                alignItems: "center",
-                backgroundColor: "transparent",
-                elevation: 6,
-                gap: 10,
-              }}
-            >
-              <View ref={addColorModal.anchorRef}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowPalette(false);
-                    addColorModal.open();
-                  }}
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 28,
-                  }}
-                >
-                  <Plus size={22} />
-                </TouchableOpacity>
-              </View>
-              {colorArray.map(
-                (c, i) =>
-                  c.color !== color && (
-                    <TouchableOpacity
-                      key={i}
-                      onPress={() => {
-                        setColor(c.color);
-                        setShowPalette(false);
-                        setCurrentWorker(c);
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 14,
-                          backgroundColor: c.color,
-                        }}
-                      />
-                    </TouchableOpacity>
-                  ),
-              )}
-            </View>
+            <Palette
+              setShowPalette={setShowPalette}
+              addColorModal={addColorModal}
+            />
+            // <View
+            //   style={{
+            //     position: "absolute",
+            //     bottom: 0,
+            //     left: 0,
+            //     transform: [{ translateY: -40 }],
+            //     alignItems: "center",
+            //     backgroundColor: "transparent",
+            //     elevation: 6,
+            //     gap: 10,
+            //   }}
+            // >
+            //   <View ref={addColorModal.anchorRef}>
+            //     <TouchableOpacity
+            //       onPress={() => {
+            //         setShowPalette(false);
+            //         addColorModal.open();
+            //       }}
+            //       style={{
+            //         alignItems: "center",
+            //         justifyContent: "center",
+            //         width: 28,
+            //       }}
+            //     >
+            //       <Plus size={22} />
+            //     </TouchableOpacity>
+            //   </View>
+            //   {colorArray.map(
+            //     (c, i) =>
+            //       c.color !== color && (
+            //         <TouchableOpacity
+            //           key={i}
+            //           onPress={() => {
+            //             setColor(c.color);
+            //             setShowPalette(false);
+            //             setCurrentWorker(c);
+            //           }}
+            //         >
+            //           <View
+            //             style={{
+            //               width: 28,
+            //               height: 28,
+            //               borderRadius: 14,
+            //               backgroundColor: c.color,
+            //             }}
+            //           />
+            //         </TouchableOpacity>
+            //       ),
+            //   )}
+            // </View>
           )}
         </View>
       ) : (
@@ -167,7 +167,6 @@ export default function CustomTabBar() {
         {isAddScreen ? <SquareCheckBig size={28} /> : <SquarePen size={28} />}
       </TouchableOpacity>
 
-      {/* modal them mau */}
       {addColorModal.visible && (
         <Portal>
           <Animated.View
