@@ -18,7 +18,7 @@ import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DELETE_PIN, PRESET_COLORS, PRICE_COLOR } from "../constants";
-import { useDuricoAlert, useGlobalState } from "../context";
+import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 
 export default function CustomTabBar() {
@@ -52,7 +52,6 @@ export default function CustomTabBar() {
     return found ? found.name : "";
   };
 
-  const alert = useDuricoAlert();
   const addColorModal = useAnchoredModalReanimated();
 
   useEffect(() => {

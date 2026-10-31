@@ -1,12 +1,10 @@
 import React from "react";
 import { Text, View } from "react-native";
 import Animated, {
-    useAnimatedScrollHandler,
-    useSharedValue
+  useAnimatedScrollHandler,
+  useSharedValue,
 } from "react-native-reanimated";
 import { TransactionCard } from "../../components";
-const CARD_HEIGHT = 120;
-const CARD_MARGIN = 16;
 
 const DATA = [
   {
