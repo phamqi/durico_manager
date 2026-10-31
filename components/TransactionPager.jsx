@@ -2,8 +2,8 @@ import { useRef, useState } from "react";
 import { Text, View } from "react-native";
 import PagerView from "react-native-pager-view";
 import Animated, {
-    useAnimatedStyle,
-    withSpring,
+  useAnimatedStyle,
+  withSpring,
 } from "react-native-reanimated";
 import CoffeeHarvest from "./CoffeeHarvest";
 import CoffeeTransaction from "./CoffeeTransaction";
@@ -58,9 +58,9 @@ export default function TransactionPager() {
       >
         <Text
           style={{
-            fontSize: 14,
-            fontWeight: "700",
-            color: "#1F2937",
+            color: "#333",
+            fontSize: 22,
+            fontWeight: "bold",
             marginBottom: 8,
           }}
         >

@@ -32,6 +32,7 @@ export const initDB = async () => {
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       is_hidden INTEGER NOT NULL DEFAULT 0,
+      transaction_types INTEGER NOT NULL DEFAULT 0,
       total_summary INTEGER NOT NULL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );

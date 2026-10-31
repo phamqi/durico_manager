@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+import { usePathname } from "expo-router";
+import { useEffect } from "react";
 import {
+  Pressable,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Portal } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { useGlobalState } from "../../context";
+import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
 export default function AddScreen() {
@@ -20,14 +24,25 @@ export default function AddScreen() {
     setCurrentWorker,
     getTransactionsData,
     totalSummary,
+    selectedType,
+    setSelectedType,
   } = useGlobalState();
 
-  const [itemHeight, setItemHeight] = useState(null);
+  const typeModal = useAnchoredModalReanimated();
+
+  const transactionTypes = [
+    { label: "Thu nhập", value: 0 },
+    { label: "Ca phe", value: 1 },
+    { label: "Sau rieng", value: 2 },
+  ];
+
+  const pathname = usePathname();
 
   useEffect(() => {
-    console.log("colorArray in add.jsx", colorArray);
-  }, []);
-
+    if (typeModal?.visible) {
+      typeModal.close();
+    }
+  }, [pathname]);
   const animatedStyle = useAddScreenEnterAnimation();
 
   const handleInputChange = (text, colIndex, inputIndex) => {
@@ -47,6 +62,27 @@ export default function AddScreen() {
     updatedData[colIndex].result = sum.toString();
 
     setColumnsData(updatedData);
+  };
+
+  const currentSelectedLabel =
+    transactionTypes.find((t) => t.value === selectedType)?.label ||
+    "Chọn loại";
+
+  // Style đồng bộ kích thước chuẩn 48% cho mọi ô
+  const cardStyle = {
+    width: "48%",
+    height: 248,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#e1e4e8",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginBottom: 10,
   };
 
   return (
@@ -75,21 +111,6 @@ export default function AddScreen() {
           }}
           contentContainerStyle={{ paddingBottom: 40 }}
         >
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#007AFF",
-              padding: 12,
-              borderRadius: 8,
-              alignItems: "center",
-              marginBottom: 15,
-            }}
-            onPress={addColumn}
-          >
-            <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-              + Thêm tổ hợp cột
-            </Text>
-          </TouchableOpacity>
-
           <View
             style={{
               flexDirection: "row",
@@ -97,32 +118,8 @@ export default function AddScreen() {
               justifyContent: "space-between",
             }}
           >
-            {columnsData.map((item, index) => (
-              <View
-                key={item.id}
-                onLayout={(event) => {
-                  if (index === 0) {
-                    const { height } = event.nativeEvent.layout;
-                    setItemHeight(height);
-                  }
-                }}
-                style={{
-                  width: "48%",
-                  flexBasis: "48%",
-                  maxWidth: "48%",
-                  backgroundColor: "#fff",
-                  borderRadius: 8,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: "#e1e4e8",
-                  elevation: 2,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 2,
-                  marginBottom: 10,
-                }}
-              >
+            {columnsData?.map((item, index) => (
+              <View key={item.id} style={cardStyle}>
                 <Text
                   style={{
                     fontSize: 14,
@@ -141,7 +138,6 @@ export default function AddScreen() {
                     style={{
                       height: 28,
                       borderWidth: 0,
-                      borderColor: "#d0d7de",
                       borderRadius: 6,
                       paddingBottom: 0,
                       paddingTop: 0,
@@ -206,26 +202,8 @@ export default function AddScreen() {
               </View>
             ))}
 
-            <View
-              style={{
-                width: "48%",
-                flexBasis: "48%",
-                maxWidth: "48%",
-                backgroundColor: "#fff",
-                borderRadius: 8,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: "#e1e4e8",
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 2,
-                marginBottom: 10,
-                justifyContent: "space-between",
-                height: itemHeight ? itemHeight : undefined, // Gán chiều cao tự động
-              }}
-            >
+            {/* ================= Ô TỔNG KẾT CHUNG ================= */}
+            <View style={[cardStyle, { justifyContent: "space-between" }]}>
               <View>
                 <Text
                   style={{
@@ -238,49 +216,200 @@ export default function AddScreen() {
                 >
                   Tổng kết chung
                 </Text>
+
+                {/* Nút chọn loại giao dịch */}
+                <View style={{ marginBottom: 8 }}>
+                  <View ref={typeModal.anchorRef} collapsable={false}>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#f8f9fa",
+                        padding: 8,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor: "#007AFF",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                      onPress={() => typeModal.open()}
+                    >
+                      <Text
+                        style={{
+                          color: "#333",
+                          fontWeight: "bold",
+                          fontSize: 13,
+                        }}
+                      >
+                        {currentSelectedLabel}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#007AFF",
-                  padding: 12,
-                  borderRadius: 8,
-                  alignItems: "center",
-                  marginBottom: 15,
-                }}
-                onPress={getTransactionsData}
-              >
-                <Text
-                  style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}
+
+              <View>
+                {/* Nút thêm tổ hợp cột */}
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#007AFF",
+                    padding: 10,
+                    borderRadius: 6,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                  onPress={addColumn}
                 >
-                  + Thêm tổ hợp cột
-                </Text>
-              </TouchableOpacity>
-              <View
-                style={{
-                  marginTop: 4,
-                  padding: 6,
-                  backgroundColor: "#e6f4ea",
-                  borderRadius: 6,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{ fontSize: 14, color: "#137333", fontWeight: "600" }}
+                  <Text
+                    style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}
+                  >
+                    + Thêm cột
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#007AFF",
+                    padding: 10,
+                    borderRadius: 6,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                  onPress={getTransactionsData}
                 >
-                  Tổng:
-                </Text>
-                <Text
-                  style={{ fontSize: 16, fontWeight: "bold", color: "#137333" }}
+                  <Text
+                    style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}
+                  >
+                    Xem
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Tổng kết */}
+                <View
+                  style={{
+                    padding: 6,
+                    backgroundColor: "#e6f4ea",
+                    borderRadius: 6,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
                 >
-                  {totalSummary}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: "#137333",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Tổng:
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      color: "#137333",
+                    }}
+                  >
+                    {totalSummary}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
         </ScrollView>
       </Animated.View>
+
+      {/* ================= MODAL CHỌN LOẠI GIAO DỊCH ================= */}
+      {typeModal.visible && (
+        <Portal>
+          <Animated.View
+            style={[
+              {
+                position: "absolute",
+                width: typeModal.MAX_RADIUS * 2,
+                height: typeModal.MAX_RADIUS * 2,
+                borderRadius: typeModal.MAX_RADIUS,
+                backgroundColor: "#00000022",
+                left: typeModal.SCREEN_WIDTH / 2 - typeModal.MAX_RADIUS,
+                top: typeModal.SCREEN_HEIGHT / 2 - typeModal.MAX_RADIUS,
+              },
+              typeModal.backdropStyle,
+            ]}
+          >
+            <Pressable
+              onPress={() => typeModal.close()}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                right: 0,
+                left: 0,
+                backgroundColor: "#00000022",
+              }}
+            />
+          </Animated.View>
+
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "transparent",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Animated.View
+              style={[
+                {
+                  width: 260,
+                  backgroundColor: "#fff",
+                  borderRadius: 12,
+                  padding: 16,
+                  gap: 8,
+                },
+                typeModal.animatedStyle,
+              ]}
+            >
+              <Text
+                style={{
+                  fontWeight: "600",
+                  fontSize: 16,
+                  textAlign: "center",
+                  marginBottom: 4,
+                }}
+              >
+                Chọn loại giao dịch
+              </Text>
+
+              {transactionTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={{
+                    paddingVertical: 12,
+                    paddingHorizontal: 12,
+                    borderRadius: 8,
+                    backgroundColor:
+                      selectedType === type.value ? "#e6f4ea" : "transparent",
+                  }}
+                  onPress={() => {
+                    setSelectedType(type.value);
+                    typeModal.close();
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      color: selectedType === type.value ? "#137333" : "#333",
+                      fontWeight:
+                        selectedType === type.value ? "bold" : "normal",
+                    }}
+                  >
+                    {type.label} + {type.value}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
+          </View>
+        </Portal>
+      )}
     </View>
   );
 }

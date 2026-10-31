@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -158,18 +158,7 @@ export default function DurianTransaction() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#44b422", paddingTop: 60 }}>
-      <Text
-        style={{
-          color: "#333",
-          fontSize: 22,
-          fontWeight: "bold",
-          textAlign: "center",
-          marginBottom: 20,
-        }}
-      >
-        Danh sách Giao dịch sau
-      </Text>
+    <View style={{ flex: 1, backgroundColor: "#44b422", paddingTop: 10 }}>
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}

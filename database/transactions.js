@@ -1,14 +1,19 @@
 import { getDB } from "./database";
 
-export const createTransactionWithDetails = async (details, totalSummary) => {
+export const createTransactionWithDetails = async (
+  details,
+  totalSummary,
+  selectedType,
+) => {
   try {
+    console.log(" create: ", totalSummary, selectedType, details);
     const db = getDB();
     if (!db) throw new Error("DB not ready");
     await db.withTransactionAsync(async () => {
       const results = await db.runAsync(
-        `INSERT INTO transactions ( is_hidden, created_at, total_summary) 
-         VALUES ( 0, CURRENT_TIMESTAMP, ?);`,
-        [parseInt(totalSummary, 10) || 0],
+        `INSERT INTO transactions ( is_hidden, created_at, total_summary, transaction_types) 
+         VALUES ( 0, CURRENT_TIMESTAMP, ?, ?);`,
+        [parseInt(totalSummary, 10) || 0, parseInt(selectedType) || 0],
       );
 
       const transactionId = results.lastInsertRowId;

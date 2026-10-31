@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -158,18 +158,7 @@ export default function CoffeeHarvest() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#bc3c3c", paddingTop: 60 }}>
-      <Text
-        style={{
-          color: "#333",
-          fontSize: 22,
-          fontWeight: "bold",
-          textAlign: "center",
-          marginBottom: 20,
-        }}
-      >
-        Lich su can coffee
-      </Text>
+    <View style={{ flex: 1, backgroundColor: "#bc3c3c", paddingTop: 10 }}>
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}

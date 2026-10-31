@@ -12,3 +12,8 @@ export const PRICE_COLOR = {
   blur: "#FFE066",
   active: "#FFCC05",
 };
+export const TRANSACTION_TYPES = {
+  income: 1,
+  coffee: 2,
+  durian: 3,
+};

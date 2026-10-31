@@ -23,33 +23,27 @@ export const StateProvider = ({ children }) => {
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(false);
   const alert = useDuricoAlert();
-  const getDefaultColumns = () => [
-    {
-      id: Date.now(),
-      inputs: [
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-        { weight: 0, worker_id: null, worker_name: null, worker_color: null },
-      ],
-      result: 0,
-    },
-  ];
+  const createColumn = () => ({
+    id: Date.now(),
+    inputs: Array(5).fill({
+      weight: 0,
+      worker_id: null,
+      worker_name: null,
+      worker_color: null,
+    }),
+    result: 0,
+  });
 
-  const [columnsData, setColumnsData] = useState(getDefaultColumns);
+  const [columnsData, setColumnsData] = useState(() => [createColumn()]);
 
-  const handleReset = () => {
-    setColumnsData(getDefaultColumns());
-  };
-  const addColumn = () => {
-    setColumnsData((prev) => [...prev, createDefaultColumn()]);
-  };
+  const handleReset = () => setColumnsData([createColumn()]);
+
+  const addColumn = () => setColumnsData((prev) => [...prev, createColumn()]);
   const totalSummary = columnsData.reduce(
     (acc, col) => acc + (parseFloat(col.result) || 0),
     0,
   );
-
+  const [selectedType, setSelectedType] = useState(0);
   useEffect(() => {
     setLoading(true);
     (async () => {
@@ -129,8 +123,19 @@ export const StateProvider = ({ children }) => {
   const createTransaction = async () => {
     try {
       if (totalSummary > 0) {
-        await createTransactionWithDetails(columnsData, totalSummary);
+        console.log(
+          "sate context create: ",
+          totalSummary,
+          selectedType,
+          columnsData,
+        );
+        await createTransactionWithDetails(
+          columnsData,
+          totalSummary,
+          selectedType,
+        );
         alert.toast("Thêm giao dịch thành công");
+        handleReset();
       } else {
         alert.toast("Vui lòng nhập đầy đủ thông tin");
       }
@@ -143,8 +148,8 @@ export const StateProvider = ({ children }) => {
     try {
       const rows = await getTransactions();
       const row = await getTransactionsDetails();
-      console.log("bcd", row.toString());
-      console.log("hjlk", rows.toString());
+      console.log("bcd", row);
+      console.log("hjlk", rows);
     } catch (error) {
       console.log("getTransec stateContext", error);
     }
@@ -183,6 +188,8 @@ export const StateProvider = ({ children }) => {
         getTransactionsData,
         totalSummary,
         handleReset,
+        selectedType,
+        setSelectedType,
       }}
     >
       {children}

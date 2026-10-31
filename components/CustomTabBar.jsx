@@ -65,7 +65,11 @@ export default function CustomTabBar() {
       setTempName("");
     }
   }, []);
-
+  useEffect(() => {
+    if (addColorModal?.visible) {
+      addColorModal.close();
+    }
+  }, [pathname]);
   return (
     <View
       style={{

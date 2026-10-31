@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -158,18 +158,7 @@ export default function CoffeeTransaction() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#3b239e", paddingTop: 60 }}>
-      <Text
-        style={{
-          color: "#333",
-          fontSize: 22,
-          fontWeight: "bold",
-          textAlign: "center",
-          marginBottom: 20,
-        }}
-      >
-        Danh sách Giao dịch coffee
-      </Text>
+    <View style={{ flex: 1, backgroundColor: "#3b239e", paddingTop: 10 }}>
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
