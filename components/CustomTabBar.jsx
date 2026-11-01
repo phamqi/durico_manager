@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DELETE_PIN, PRESET_COLORS, PRICE_COLOR } from "../constants";
 import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
+import ButtonShowColor from "./ButtonShowColor";
 import Palette from "./Palette";
 
 export default function CustomTabBar() {
@@ -50,6 +51,10 @@ export default function CustomTabBar() {
 
   const addColorModal = useAnchoredModalReanimated();
 
+  const setShowPaletteFromChild = () => {
+    setShowPalette((v) => !v);
+    console.log("calling from child component");
+  };
   useEffect(() => {
     if (colorArray.length > 0 && !tempColor) {
       setColor(colorArray[0].color);
@@ -82,72 +87,13 @@ export default function CustomTabBar() {
     >
       {isAddScreen ? (
         <View style={{ position: "relative" }}>
-          <TouchableOpacity
-            onPress={() => setShowPalette((v) => !v)}
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: currentWorker?.color || PRESET_COLORS[0],
-              overflow: "hidden",
-            }}
-          ></TouchableOpacity>
+          <ButtonShowColor isTouch={setShowPaletteFromChild} />
 
           {showPalette && (
             <Palette
               setShowPalette={setShowPalette}
               addColorModal={addColorModal}
             />
-            // <View
-            //   style={{
-            //     position: "absolute",
-            //     bottom: 0,
-            //     left: 0,
-            //     transform: [{ translateY: -40 }],
-            //     alignItems: "center",
-            //     backgroundColor: "transparent",
-            //     elevation: 6,
-            //     gap: 10,
-            //   }}
-            // >
-            //   <View ref={addColorModal.anchorRef}>
-            //     <TouchableOpacity
-            //       onPress={() => {
-            //         setShowPalette(false);
-            //         addColorModal.open();
-            //       }}
-            //       style={{
-            //         alignItems: "center",
-            //         justifyContent: "center",
-            //         width: 28,
-            //       }}
-            //     >
-            //       <Plus size={22} />
-            //     </TouchableOpacity>
-            //   </View>
-            //   {colorArray.map(
-            //     (c, i) =>
-            //       c.color !== color && (
-            //         <TouchableOpacity
-            //           key={i}
-            //           onPress={() => {
-            //             setColor(c.color);
-            //             setShowPalette(false);
-            //             setCurrentWorker(c);
-            //           }}
-            //         >
-            //           <View
-            //             style={{
-            //               width: 28,
-            //               height: 28,
-            //               borderRadius: 14,
-            //               backgroundColor: c.color,
-            //             }}
-            //           />
-            //         </TouchableOpacity>
-            //       ),
-            //   )}
-            // </View>
           )}
         </View>
       ) : (

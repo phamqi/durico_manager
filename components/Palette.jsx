@@ -4,7 +4,8 @@ import { TouchableOpacity, View } from "react-native";
 import { useGlobalState } from "../context";
 
 export default function Palette({ setShowPalette, addColorModal }) {
-  const { color, setColor, colorArray, setCurrentWorker } = useGlobalState();
+  const { color, setColor, colorArray, currentWorker, setCurrentWorker } =
+    useGlobalState();
 
   return (
     <View
@@ -37,7 +38,7 @@ export default function Palette({ setShowPalette, addColorModal }) {
 
       {colorArray.map(
         (c, i) =>
-          c.color !== color && (
+          c.color !== currentWorker?.color && (
             <TouchableOpacity
               key={c.id || i}
               onPress={() => {
