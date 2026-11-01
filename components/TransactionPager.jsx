@@ -34,18 +34,26 @@ export default function TransactionPager() {
   const [activeTab, setActiveTab] = useState(0);
   const pagerRef = useRef(null);
 
-  const scrollY = useSharedValue(0);
+  // Tạo 3 scrollY riêng biệt cho 3 tab để lưu độc lập vị trí cuộn của từng tab
+  const scrollY0 = useSharedValue(0);
+  const scrollY1 = useSharedValue(0);
+  const scrollY2 = useSharedValue(0);
 
+  // Gom lại thành một mảng để dễ gọi theo activeTab
+  const scrollYList = [scrollY0, scrollY1, scrollY2];
+  const currentScrollY = scrollYList[activeTab];
+
+  // Header animate dựa theo scrollY của tab ĐANG HIỂN THỊ
   const animatedTitleStyle = useAnimatedStyle(() => {
     const fontSize = interpolate(
-      scrollY.value,
+      currentScrollY.value,
       [0, 60],
-      [34, 16],
+      [34, 18],
       Extrapolation.CLAMP,
     );
 
     const paddingTop = interpolate(
-      scrollY.value,
+      currentScrollY.value,
       [0, 60],
       [50, 30],
       Extrapolation.CLAMP,
@@ -56,6 +64,7 @@ export default function TransactionPager() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
+      {/* Header */}
       <View
         style={{
           paddingVertical: 12,
@@ -86,23 +95,25 @@ export default function TransactionPager() {
         </View>
       </View>
 
+      {/* PagerView */}
       <PagerView
         ref={pagerRef}
         style={{ flex: 1 }}
         initialPage={0}
         onPageSelected={(e) => {
+          // Khi đổi tab, chỉ cập nhật activeTab.
+          // KHÔNG reset scrollY.value = 0 nữa để giữ nguyên trạng thái cuộn của từng tab!
           setActiveTab(e.nativeEvent.position);
-          scrollY.value = 0;
         }}
       >
         <View key="0" style={{ flex: 1 }}>
-          <CoffeeHarvest scrollY={scrollY} />
+          <CoffeeHarvest scrollY={scrollY0} />
         </View>
         <View key="1" style={{ flex: 1 }}>
-          <CoffeeTransaction scrollY={scrollY} />
+          <CoffeeTransaction scrollY={scrollY1} />
         </View>
         <View key="2" style={{ flex: 1 }}>
-          <DurianTransaction scrollY={scrollY} />
+          <DurianTransaction scrollY={scrollY2} />
         </View>
       </PagerView>
     </View>
