@@ -1,8 +1,5 @@
 import { View } from "react-native";
-import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from "react-native-reanimated";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import TransactionCard from "./TransactionCard";
 
 const DATA = [
@@ -147,18 +144,17 @@ const DATA = [
     color: "#FFEEAD",
   },
 ];
-
-export default function DurianTransaction() {
-  const scrollY = useSharedValue(0);
-
+export default function DurianTransaction({ scrollY }) {
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
+      if (scrollY) {
+        scrollY.value = event.contentOffset.y;
+      }
     },
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#44b422", paddingTop: 10 }}>
+    <View style={{ flex: 1, backgroundColor: "#bc3c3c", paddingTop: 10 }}>
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -169,16 +165,14 @@ export default function DurianTransaction() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {DATA.map((item, index) => {
-          return (
-            <TransactionCard
-              key={item.id}
-              item={item}
-              index={index}
-              scrollY={scrollY}
-            />
-          );
-        })}
+        {DATA.map((item, index) => (
+          <TransactionCard
+            key={item.id}
+            item={item}
+            index={index}
+            scrollY={scrollY}
+          />
+        ))}
       </Animated.ScrollView>
     </View>
   );

@@ -1,8 +1,5 @@
 import { View } from "react-native";
-import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from "react-native-reanimated";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import TransactionCard from "./TransactionCard";
 
 const DATA = [
@@ -147,13 +144,14 @@ const DATA = [
     color: "#FFEEAD",
   },
 ];
-
-export default function CoffeeHarvest() {
-  const scrollY = useSharedValue(0);
-
+export default function CoffeeHarvest({ scrollY }) {
+  // Bắt sự kiện cuộn thực tế tại component con
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
+      // Gán thẳng giá trị cuộn vào shared value của cha
+      if (scrollY) {
+        scrollY.value = event.contentOffset.y;
+      }
     },
   });
 
@@ -169,16 +167,14 @@ export default function CoffeeHarvest() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {DATA.map((item, index) => {
-          return (
-            <TransactionCard
-              key={item.id}
-              item={item}
-              index={index}
-              scrollY={scrollY}
-            />
-          );
-        })}
+        {DATA.map((item, index) => (
+          <TransactionCard
+            key={item.id}
+            item={item}
+            index={index}
+            scrollY={scrollY} // Dùng luôn scrollY này cho các thẻ card bên trong nếu muốn
+          />
+        ))}
       </Animated.ScrollView>
     </View>
   );
