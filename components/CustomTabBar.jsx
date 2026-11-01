@@ -57,12 +57,9 @@ export default function CustomTabBar() {
   };
   useEffect(() => {
     if (colorArray.length > 0 && !tempColor) {
-      setColor(colorArray[0].color);
       setTempColor(colorArray[0].color);
       setTempName(colorArray[0].name || "");
     } else {
-      setColor(PRESET_COLORS[0]);
-      setTempColor(PRESET_COLORS[0]);
       setTempName("");
     }
   }, []);

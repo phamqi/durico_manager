@@ -4,7 +4,7 @@ import { useGlobalState } from "../context";
 
 // Nhận thêm `showPalette` (nếu cần dùng) và `setShowPalette` từ props
 export default function ButtonShowColor({ isTouch }) {
-  const { currentWorker } = useGlobalState();
+  const { colorArray, currentWorker } = useGlobalState();
 
   const TouchShowPalette = () => {
     isTouch();
@@ -12,7 +12,7 @@ export default function ButtonShowColor({ isTouch }) {
 
   useMemo(() => {
     console.log("button show color rerender");
-  }, [currentWorker]);
+  }, [colorArray]);
   return (
     <TouchableOpacity
       onPress={TouchShowPalette}

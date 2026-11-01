@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import {
@@ -44,6 +44,10 @@ export const StateProvider = ({ children }) => {
     0,
   );
   const [selectedType, setSelectedType] = useState(0);
+  const cacheRef = useRef({
+    totalSummary: 0,
+    transaction_types: 0,
+  });
   useEffect(() => {
     setLoading(true);
     (async () => {
@@ -65,6 +69,10 @@ export const StateProvider = ({ children }) => {
         const rows = await getWorkersByYear();
         setColorArray(rows);
         alert.toast("Thêm thành công");
+        if (rows && rows.length > 0) {
+          const newlyAddedWorker = rows[rows.length - 1];
+          setCurrentWorker(newlyAddedWorker);
+        }
       }
     } catch (error) {
       alert.toast("Xảy ra lỗi, thêm thất bại");
@@ -123,18 +131,21 @@ export const StateProvider = ({ children }) => {
   const createTransaction = async () => {
     try {
       if (totalSummary > 0) {
-        console.log(
-          "sate context create: ",
-          totalSummary,
-          selectedType,
-          columnsData,
-        );
-        await createTransactionWithDetails(
-          columnsData,
-          totalSummary,
-          selectedType,
-        );
-        alert.toast("Thêm giao dịch thành công");
+        const isChanged =
+          cacheRef.current.totalSummary !== totalSummary ||
+          cacheRef.current.transaction_types !== selectedType;
+        if (isChanged) {
+          await createTransactionWithDetails(
+            columnsData,
+            totalSummary,
+            selectedType,
+          );
+          alert.toast("Thêm giao dịch thành công");
+          cacheRef.current.totalSummary = totalSummary;
+          cacheRef.current.transaction_types = selectedType;
+        } else {
+          alert.toast("Giao dịch đã được thêm");
+        }
       } else {
         alert.toast("Vui lòng nhập đầy đủ thông tin");
       }
