@@ -1,5 +1,5 @@
 import * as SQLite from "expo-sqlite";
-
+import { DEFAULT_WORKER } from "../constants";
 let db = null;
 
 export const initDB = async () => {
@@ -49,7 +49,16 @@ export const initDB = async () => {
       FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE
     );
   `);
-
+  await db.runAsync(
+    `INSERT OR IGNORE INTO worker (id, year, name, color, total_weightning) VALUES (?, ?, ?, ?, ?);`,
+    [
+      DEFAULT_WORKER.id,
+      DEFAULT_WORKER.year,
+      DEFAULT_WORKER.name,
+      DEFAULT_WORKER.color,
+      DEFAULT_WORKER.total_weightning,
+    ],
+  );
   return db;
 };
 

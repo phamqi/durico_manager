@@ -1,8 +1,8 @@
+import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { useMemo } from "react";
 import { TouchableOpacity } from "react-native";
 import { useGlobalState } from "../context";
 
-// Nhận thêm `showPalette` (nếu cần dùng) và `setShowPalette` từ props
 export default function ButtonShowColor({ isTouch }) {
   const { colorArray, currentWorker } = useGlobalState();
 
@@ -20,7 +20,7 @@ export default function ButtonShowColor({ isTouch }) {
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: currentWorker?.color || "#bd3273",
+        backgroundColor: currentWorker?.color || DEFAULT_WORKER_COLOR,
         overflow: "hidden",
       }}
     ></TouchableOpacity>

@@ -145,10 +145,8 @@ const DATA = [
   },
 ];
 export default function CoffeeHarvest({ scrollY }) {
-  // Bắt sự kiện cuộn thực tế tại component con
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      // Gán thẳng giá trị cuộn vào shared value của cha
       if (scrollY) {
         scrollY.value = event.contentOffset.y;
       }
@@ -172,7 +170,7 @@ export default function CoffeeHarvest({ scrollY }) {
             key={item.id}
             item={item}
             index={index}
-            scrollY={scrollY} // Dùng luôn scrollY này cho các thẻ card bên trong nếu muốn
+            scrollY={scrollY}
           />
         ))}
       </Animated.ScrollView>

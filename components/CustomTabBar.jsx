@@ -12,7 +12,12 @@ import { Portal } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { DELETE_PIN, PRESET_COLORS, PRICE_COLOR } from "../constants";
+import {
+  DEFAULT_WORKER_COLOR,
+  DELETE_PIN,
+  PRESET_COLORS,
+  PRICE_COLOR,
+} from "../constants";
 import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 import ButtonShowColor from "./ButtonShowColor";
@@ -233,6 +238,7 @@ export default function CustomTabBar() {
                 autoCorrect={false}
                 spellCheck={false}
                 textContentType="none"
+                editable={tempColor === DEFAULT_WORKER_COLOR ? false : true}
                 style={{
                   borderWidth: 1,
                   borderColor: "#ccc",

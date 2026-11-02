@@ -54,6 +54,7 @@ export const StateProvider = ({ children }) => {
       await initDB();
       const rows = await getWorkersByYear();
       setColorArray(rows);
+      console.log("mac dinh", rows);
       const amount = await getAmountByYear();
       setAmount(amount);
       setLoading(false);

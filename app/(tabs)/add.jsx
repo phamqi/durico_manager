@@ -1,3 +1,4 @@
+import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -159,7 +160,10 @@ export default function AddScreen() {
                       textAlignVertical: "center",
                       marginBottom: 4,
                       fontSize: 16,
-                      backgroundColor: inputItem.worker_color || "#fff",
+                      backgroundColor:
+                        inputItem.worker_color === DEFAULT_WORKER_COLOR
+                          ? "#fff"
+                          : inputItem.worker_color || "#fff",
                       color: "#333333",
                       fontWeight: "600",
                     }}
