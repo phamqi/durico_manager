@@ -1,3 +1,4 @@
+import { ARRAY_COLOR } from "@/constants";
 import { Text, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -41,7 +42,7 @@ export default function TransactionCard({ item, index, scrollY }) {
           padding: 20,
           marginBottom: CARD_MARGIN,
           justifyContent: "space-between",
-          backgroundColor: item.color,
+          backgroundColor: ARRAY_COLOR[index],
           zIndex: index,
         },
         animatedStyle,
@@ -74,7 +75,7 @@ export default function TransactionCard({ item, index, scrollY }) {
         )}
       </View>
       <Text style={{ color: "#111", fontSize: 24, fontWeight: "bold" }}>
-        {item.total_summary.toLocaleString("vi-VN")} đ
+        {item.total_summary.toLocaleString("vi-VN")} kg
       </Text>
       <Text style={{ color: "#444", fontSize: 12 }}>
         Tạo lúc: {item.created_at}

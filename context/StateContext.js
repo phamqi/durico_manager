@@ -6,8 +6,7 @@ import {
   createTransactionWithDetails,
   deleteWorker,
   getAmountByYear,
-  getTransactions,
-  getTransactionsDetails,
+  getTransactionsByTypes,
   getWorkersByYear,
   initDB,
   insertWorker,
@@ -21,7 +20,7 @@ export const StateProvider = ({ children }) => {
   const [color, setColor] = useState("black");
   const [currentWorker, setCurrentWorker] = useState();
   const [amount, setAmount] = useState();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const alert = useDuricoAlert();
   const createColumn = () => ({
     id: Date.now(),
@@ -67,13 +66,8 @@ export const StateProvider = ({ children }) => {
         alert.toast("Vui lòng nhập tên");
       } else {
         await insertWorker(name.trim(), color, totalWeightning);
-        const rows = await getWorkersByYear();
         setColorArray(rows);
         alert.toast("Thêm thành công");
-        if (rows && rows.length > 0) {
-          const newlyAddedWorker = rows[rows.length - 1];
-          setCurrentWorker(newlyAddedWorker);
-        }
       }
     } catch (error) {
       alert.toast("Xảy ra lỗi, thêm thất bại");
@@ -155,12 +149,20 @@ export const StateProvider = ({ children }) => {
       console.log("sateContext.js createTransatioin", error);
     }
   };
-  const getTransactionsData = async () => {
+  const getTransactions = async (types) => {
     try {
-      const rows = await getTransactions();
-      const row = await getTransactionsDetails();
-      console.log("bcd", row);
-      console.log("hjlk", rows);
+      const rows = await getTransactionsByTypes(types);
+      console.log("state context get by types", rows);
+      return rows;
+    } catch (error) {
+      console.log("getTransec stateContext", error);
+    }
+  };
+  const getTransactionsDetails = async (transaction_id) => {
+    try {
+      const rows = await getTransactionsByTypes(types);
+      console.log("state context get by types", rows);
+      return rows;
     } catch (error) {
       console.log("getTransec stateContext", error);
     }
@@ -196,7 +198,8 @@ export const StateProvider = ({ children }) => {
         setColumnsData,
         addColumn,
         createTransaction,
-        getTransactionsData,
+        getTransactions,
+        getTransactionsDetails,
         totalSummary,
         handleReset,
         selectedType,

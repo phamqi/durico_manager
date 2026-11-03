@@ -1,150 +1,23 @@
-import { View } from "react-native";
+import { useEffect, useState } from "react";
+import { Text, View } from "react-native";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
+import { useGlobalState } from "../context";
 import TransactionCard from "./TransactionCard";
 
-const DATA = [
-  {
-    id: 1,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 2,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 3,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 4,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 5,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-  {
-    id: 6,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 7,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 8,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 9,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 10,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-  {
-    id: 11,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 12,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 13,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 14,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 15,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-  {
-    id: 16,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 17,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 18,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 19,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 20,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-];
 export default function CoffeeHarvest({ scrollY }) {
+  const { getTransactions } = useGlobalState();
+  const [loading, setLoading] = useState(true);
+  const [transactionArray, setTransactionsArray] = useState([]);
+  useEffect(() => {
+    setLoading(true);
+    (async () => {
+      const rows = await getTransactions(0);
+      setTransactionsArray(rows);
+      console.log("TransactionsArray harvest", rows);
+      setLoading(false);
+    })();
+  }, []);
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       if (scrollY) {
@@ -165,14 +38,18 @@ export default function CoffeeHarvest({ scrollY }) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {DATA.map((item, index) => (
-          <TransactionCard
-            key={item.id}
-            item={item}
-            index={index}
-            scrollY={scrollY}
-          />
-        ))}
+        {loading ? (
+          <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
+        ) : (
+          transactionArray?.map((item, index) => (
+            <TransactionCard
+              key={item.id}
+              item={item}
+              index={index}
+              scrollY={scrollY}
+            />
+          ))
+        )}
       </Animated.ScrollView>
     </View>
   );

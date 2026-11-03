@@ -66,28 +66,37 @@ export const toggleTransactionHidden = async (transactionId, isHidden) => {
   }
 };
 
-export const getTransactions = async (includeHidden = false) => {
+export const getTransactionsByTypes = async (types) => {
   try {
     const db = getDB();
     if (!db) return [];
-    let query = `SELECT * FROM transactions`;
-    if (!includeHidden) {
-      query += ` WHERE is_hidden = 0`;
-    }
-    const rows = await db.getAllAsync(query);
+    const rows = await db.getAllAsync(
+      `
+      SELECT * 
+      FROM transactions 
+      WHERE transaction_types = ? ;
+      `,
+      [types],
+    );
     return rows;
   } catch (error) {
-    console.log("transactionRepo/getTransactions", error);
+    console.log("workerRepo/getWorkerByYear", error);
   }
 };
-export const getTransactionsDetails = async () => {
+export const getTransactionsDetailsByID = async (transaction_id) => {
   try {
     const db = getDB();
     if (!db) return [];
-    let query = `SELECT * FROM transaction_details`;
-    const rows = await db.getAllAsync(query);
+    const rows = await db.getAllAsync(
+      `
+      SELECT * 
+      FROM transaction_details 
+      WHERE id = ? ;
+      `,
+      [transaction_id],
+    );
     return rows;
   } catch (error) {
-    console.log("transactionRepo/getTransactions", error);
+    console.log("workerRepo/getWorkerByYear", error);
   }
 };

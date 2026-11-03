@@ -22,13 +22,12 @@ export const getWorkersByYear = async () => {
     if (!db) return [];
     const rows = await db.getAllAsync(
       `
-      SELECT *
-      FROM worker
-      WHERE year = strftime('%Y', 'now')
-      ORDER BY name
+      SELECT * 
+      FROM worker 
+      WHERE year = strftime('%Y', 'now') 
+      OR year = '1975';
       `,
     );
-    console.log("getWorkerByYear workerRepo", rows);
     return rows;
   } catch (error) {
     console.log("workerRepo/getWorkerByYear", error);

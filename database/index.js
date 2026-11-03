@@ -2,8 +2,8 @@ export { createAmount, getAmountByYear } from "./amountRepo";
 export { db, initDB } from "./database";
 export {
     createTransactionWithDetails,
-    getTransactions,
-    getTransactionsDetails
+    getTransactionsByTypes,
+    getTransactionsDetailsByID
 } from "./transactions";
 export {
     deleteWorker,
