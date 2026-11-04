@@ -38,5 +38,5 @@ export const ARRAY_COLOR = [
 ];
 export const getRandomColor = () => {
   const randomIndex = Math.floor(Math.random() * ARRAY_COLOR.length);
-  return ARRAY_COLOR[randomIndex];
+  return randomIndex;
 };

@@ -42,7 +42,7 @@ export default function TransactionCard({ item, index, scrollY }) {
           padding: 20,
           marginBottom: CARD_MARGIN,
           justifyContent: "space-between",
-          backgroundColor: ARRAY_COLOR[index],
+          backgroundColor: ARRAY_COLOR[item.background_color || 0],
           zIndex: index,
         },
         animatedStyle,

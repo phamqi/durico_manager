@@ -4,16 +4,21 @@ export const createTransactionWithDetails = async (
   details,
   totalSummary,
   selectedType,
+  randomValue,
 ) => {
   try {
-    console.log(" create: ", totalSummary, selectedType, details);
+    console.log(" create: ", totalSummary, selectedType, details, randomValue);
     const db = getDB();
     if (!db) throw new Error("DB not ready");
     await db.withTransactionAsync(async () => {
       const results = await db.runAsync(
-        `INSERT INTO transactions ( is_hidden, created_at, total_summary, transaction_types) 
-         VALUES ( 0, CURRENT_TIMESTAMP, ?, ?);`,
-        [parseInt(totalSummary, 10) || 0, parseInt(selectedType) || 0],
+        `INSERT INTO transactions ( is_hidden, created_at, total_summary, transaction_types, background_color) 
+         VALUES ( 0, CURRENT_TIMESTAMP, ?, ?, ?);`,
+        [
+          parseInt(totalSummary, 10) || 0,
+          parseInt(selectedType) || 0,
+          parseInt(randomValue, 10) || 0,
+        ],
       );
 
       const transactionId = results.lastInsertRowId;

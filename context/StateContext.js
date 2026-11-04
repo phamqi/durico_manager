@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
+import { getRandomColor } from "@/constants";
 import {
   createAmount,
   createTransactionWithDetails,
@@ -53,7 +54,6 @@ export const StateProvider = ({ children }) => {
       await initDB();
       const rows = await getWorkersByYear();
       setColorArray(rows);
-      console.log("mac dinh", rows);
       const amount = await getAmountByYear();
       setAmount(amount);
       setLoading(false);
@@ -66,6 +66,7 @@ export const StateProvider = ({ children }) => {
         alert.toast("Vui lòng nhập tên");
       } else {
         await insertWorker(name.trim(), color, totalWeightning);
+        const rows = await getWorkersByYear();
         setColorArray(rows);
         alert.toast("Thêm thành công");
       }
@@ -130,10 +131,13 @@ export const StateProvider = ({ children }) => {
           cacheRef.current.totalSummary !== totalSummary ||
           cacheRef.current.transaction_types !== selectedType;
         if (isChanged) {
+          const randomValue = getRandomColor();
+          console.log("data chen vao", JSON.stringify(columnsData));
           await createTransactionWithDetails(
             columnsData,
             totalSummary,
             selectedType,
+            randomValue,
           );
           alert.toast("Thêm giao dịch thành công");
           cacheRef.current.totalSummary = totalSummary;
@@ -160,7 +164,7 @@ export const StateProvider = ({ children }) => {
   };
   const getTransactionsDetails = async (transaction_id) => {
     try {
-      const rows = await getTransactionsByTypes(types);
+      const rows = await getTransactionsByTypes(transaction_id);
       console.log("state context get by types", rows);
       return rows;
     } catch (error) {

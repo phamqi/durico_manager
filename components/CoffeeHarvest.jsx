@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Text, View } from "react-native";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { useGlobalState } from "../context";
@@ -8,16 +9,24 @@ export default function CoffeeHarvest({ scrollY }) {
   const { getTransactions } = useGlobalState();
   const [loading, setLoading] = useState(true);
   const [transactionArray, setTransactionsArray] = useState([]);
-  useEffect(() => {
-    setLoading(true);
-    (async () => {
-      const rows = await getTransactions(0);
-      setTransactionsArray(rows);
-      console.log("TransactionsArray harvest", rows);
-      setLoading(false);
-    })();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      setLoading(true);
 
+      (async () => {
+        const rows = await getTransactions(0);
+        if (isMounted) {
+          setTransactionsArray(rows);
+          setLoading(false);
+        }
+      })();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [getTransactions]),
+  );
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       if (scrollY) {
