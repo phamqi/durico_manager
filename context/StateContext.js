@@ -132,7 +132,6 @@ export const StateProvider = ({ children }) => {
           cacheRef.current.transaction_types !== selectedType;
         if (isChanged) {
           const randomValue = getRandomColor();
-          console.log("data chen vao", JSON.stringify(columnsData));
           await createTransactionWithDetails(
             columnsData,
             totalSummary,

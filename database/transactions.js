@@ -1,5 +1,59 @@
+import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { getDB } from "./database";
 
+//   details,
+//   totalSummary,
+//   selectedType,
+//   randomValue,
+// ) => {
+//   try {
+//     console.log(" create: ", totalSummary, selectedType, details, randomValue);
+//     const db = getDB();
+//     if (!db) throw new Error("DB not ready");
+//     await db.withTransactionAsync(async () => {
+//       const results = await db.runAsync(
+//         `INSERT INTO transactions ( is_hidden, created_at, total_summary, transaction_types, background_color)
+//          VALUES ( 0, CURRENT_TIMESTAMP, ?, ?, ?);`,
+//         [
+//           Number(totalSummary) || 0,
+//           Number(selectedType) || 0,
+//           Number(randomValue) || 0,
+//         ],
+//       );
+
+//       const transactionId = results.lastInsertRowId;
+
+//       for (let colIdx = 0; colIdx < details.length; colIdx++) {
+//         const columnItem = details[colIdx];
+//         const columnIndex = colIdx + 1;
+
+//         if (columnItem.inputs && Array.isArray(columnItem.inputs)) {
+//           for (let rowIdx = 0; rowIdx < columnItem.inputs.length; rowIdx++) {
+//             const inputItem = columnItem.inputs[rowIdx];
+//             const rowIndex = rowIdx + 1;
+//             await db.runAsync(
+//               `INSERT INTO transaction_details (transaction_id, column_index, row_index, worker_id, worker_name, worker_color, weight, result)
+//                VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+//               [
+//                 transactionId,
+//                 columnIndex,
+//                 rowIndex,
+//                 inputItem.worker_id || null,
+//                 inputItem.worker_name || null,
+//                 inputItem.worker_color || null,
+//                 Number(inputItem.weight) || 0,
+//                 Number(columnItem.result) || 0,
+//               ],
+//             );
+//           }
+//         }
+//       }
+//     });
+//   } catch (error) {
+//     console.log("transactionRepo/createTransactionWithDetails", error);
+//     throw error;
+//   }
+// };
 export const createTransactionWithDetails = async (
   details,
   totalSummary,
@@ -7,7 +61,6 @@ export const createTransactionWithDetails = async (
   randomValue,
 ) => {
   try {
-    console.log(" create: ", totalSummary, selectedType, details, randomValue);
     const db = getDB();
     if (!db) throw new Error("DB not ready");
     await db.withTransactionAsync(async () => {
@@ -15,20 +68,28 @@ export const createTransactionWithDetails = async (
         `INSERT INTO transactions ( is_hidden, created_at, total_summary, transaction_types, background_color) 
          VALUES ( 0, CURRENT_TIMESTAMP, ?, ?, ?);`,
         [
-          parseInt(totalSummary, 10) || 0,
-          parseInt(selectedType) || 0,
-          parseInt(randomValue, 10) || 0,
+          Number(totalSummary) || 0,
+          Number(selectedType) || 0,
+          Number(randomValue) || 0,
         ],
       );
 
       const transactionId = results.lastInsertRowId;
+
       for (let colIdx = 0; colIdx < details.length; colIdx++) {
         const columnItem = details[colIdx];
         const columnIndex = colIdx + 1;
 
+        const columnResult = Number(columnItem.result) || 0;
+        if (columnResult === 0) continue;
+
         if (columnItem.inputs && Array.isArray(columnItem.inputs)) {
           for (let rowIdx = 0; rowIdx < columnItem.inputs.length; rowIdx++) {
             const inputItem = columnItem.inputs[rowIdx];
+            const weightValue = Number(inputItem.weight) || 0;
+
+            if (weightValue === 0) continue;
+
             const rowIndex = rowIdx + 1;
             await db.runAsync(
               `INSERT INTO transaction_details (transaction_id, column_index, row_index, worker_id, worker_name, worker_color, weight, result)
@@ -37,11 +98,11 @@ export const createTransactionWithDetails = async (
                 transactionId,
                 columnIndex,
                 rowIndex,
-                inputItem.worker_id || null,
-                inputItem.worker_name || null,
-                inputItem.worker_color || null,
-                parseInt(inputItem.weight, 10) || 0,
-                parseInt(columnItem.result, 10) || 0,
+                inputItem.worker_id || "none",
+                inputItem.worker_name || "none",
+                inputItem.worker_color || DEFAULT_WORKER_COLOR,
+                weightValue,
+                columnResult,
               ],
             );
           }
@@ -50,10 +111,8 @@ export const createTransactionWithDetails = async (
     });
   } catch (error) {
     console.log("transactionRepo/createTransactionWithDetails", error);
-    throw error;
   }
 };
-
 export const toggleTransactionHidden = async (transactionId, isHidden) => {
   try {
     const db = getDB();
