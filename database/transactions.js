@@ -155,7 +155,7 @@ export const getTransactionsDetailsByID = async (transaction_id) => {
       `
       SELECT * 
       FROM transaction_details 
-      WHERE id = ? ;
+      WHERE transaction_id = ? ;
       `,
       [transaction_id],
     );

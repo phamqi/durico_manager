@@ -8,6 +8,7 @@ import {
   deleteWorker,
   getAmountByYear,
   getTransactionsByTypes,
+  getTransactionsDetailsByID,
   getWorkersByYear,
   initDB,
   insertWorker,
@@ -155,7 +156,6 @@ export const StateProvider = ({ children }) => {
   const getTransactions = async (types) => {
     try {
       const rows = await getTransactionsByTypes(types);
-      console.log("state context get by types", rows);
       return rows;
     } catch (error) {
       console.log("getTransec stateContext", error);
@@ -163,8 +163,8 @@ export const StateProvider = ({ children }) => {
   };
   const getTransactionsDetails = async (transaction_id) => {
     try {
-      const rows = await getTransactionsByTypes(transaction_id);
-      console.log("state context get by types", rows);
+      const rows = await getTransactionsDetailsByID(transaction_id);
+      console.log("state context get by id", rows);
       return rows;
     } catch (error) {
       console.log("getTransec stateContext", error);

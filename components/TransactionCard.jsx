@@ -1,5 +1,6 @@
 import { ARRAY_COLOR } from "@/constants";
-import { Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Text, TouchableOpacity, View } from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -13,7 +14,7 @@ export default function TransactionCard({ item, index, scrollY }) {
   const animatedStyle = useAnimatedStyle(() => {
     const originalY = index * (CARD_HEIGHT + CARD_MARGIN);
 
-    const MAX_STACK_INDEX = 5;
+    const MAX_STACK_INDEX = 4;
     const STACK_OFFSET = 9;
     const effectiveIndex = Math.min(index, MAX_STACK_INDEX);
     const stickyTargetY = effectiveIndex * STACK_OFFSET;
@@ -32,6 +33,14 @@ export default function TransactionCard({ item, index, scrollY }) {
     };
   });
 
+  const router = useRouter();
+  const handlePress = () => {
+    router.push({
+      pathname: "/details",
+      params: { id: item.id },
+    });
+  };
+
   return (
     <Animated.View
       style={[
@@ -48,38 +57,40 @@ export default function TransactionCard({ item, index, scrollY }) {
         animatedStyle,
       ]}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ color: "#333", fontSize: 14, fontWeight: "600" }}>
-          Giao dịch #{item.id}
-        </Text>
-        {item.is_hidden === 1 && (
-          <Text
-            style={{
-              backgroundColor: "rgba(0,0,0,0.2)",
-              color: "#fff",
-              fontSize: 10,
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              borderRadius: 6,
-              overflow: "hidden",
-            }}
-          >
-            Đang ẩn
+      <TouchableOpacity onPress={handlePress}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#333", fontSize: 14, fontWeight: "600" }}>
+            Giao dịch #{item.id}
           </Text>
-        )}
-      </View>
-      <Text style={{ color: "#111", fontSize: 24, fontWeight: "bold" }}>
-        {item.total_summary.toLocaleString("vi-VN")} kg
-      </Text>
-      <Text style={{ color: "#444", fontSize: 12 }}>
-        Tạo lúc: {item.created_at}
-      </Text>
+          {item.is_hidden === 1 && (
+            <Text
+              style={{
+                backgroundColor: "rgba(0,0,0,0.2)",
+                color: "#fff",
+                fontSize: 10,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 6,
+                overflow: "hidden",
+              }}
+            >
+              Đang ẩn
+            </Text>
+          )}
+        </View>
+        <Text style={{ color: "#111", fontSize: 24, fontWeight: "bold" }}>
+          {item.total_summary.toLocaleString("vi-VN")} kg
+        </Text>
+        <Text style={{ color: "#444", fontSize: 12 }}>
+          Tạo lúc: {item.created_at}
+        </Text>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
