@@ -1,19 +1,19 @@
+import { CustomKeypadAdvanced } from "@/components";
 import { DEFAULT_WORKER_COLOR } from "@/constants";
+import { useDuricoAlert, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Pressable,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Portal } from "react-native-paper";
 import Animated from "react-native-reanimated";
-import { useDuricoAlert, useGlobalState } from "../../context";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
+
 export default function AddScreen() {
   const {
     columnsData,
@@ -22,7 +22,6 @@ export default function AddScreen() {
     colorArray,
     currentWorker,
     setCurrentWorker,
-    getTransactionsData,
     totalSummary,
     selectedType,
     setSelectedType,
@@ -31,12 +30,6 @@ export default function AddScreen() {
   const alert = useDuricoAlert();
   const typeModal = useAnchoredModalReanimated();
 
-  const transactionTypes = [
-    { label: "Thu nhập", value: 0 },
-    { label: "Ca phe", value: 1 },
-    { label: "Sau rieng", value: 2 },
-  ];
-
   const pathname = usePathname();
 
   useEffect(() => {
@@ -44,30 +37,101 @@ export default function AddScreen() {
       typeModal.close();
     }
   }, [pathname]);
+
   const animatedStyle = useAddScreenEnterAnimation();
 
-  const handleInputChange = (text, colIndex, inputIndex) => {
+  const [activeColIndex, setActiveColIndex] = useState(0);
+  const [activeInputIndex, setActiveInputIndex] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Tạo một Ref để lưu trữ danh sách các ô TextInput nhằm điều khiển focus thủ công
+  const inputRefs = useRef({});
+
+  useEffect(() => {
+    if (!columnsData || columnsData.length === 0) {
+      if (typeof addColumn === "function") {
+        addColumn();
+      }
+    }
+  }, [columnsData]);
+
+  // Hàm hỗ trợ focus vào ô TextInput tương ứng khi dùng nút < và >
+  const focusInput = (colIdx, inputIdx) => {
+    setActiveColIndex(colIdx);
+    setActiveInputIndex(inputIdx);
+    const key = `${colIdx}-${inputIdx}`;
+    if (inputRefs.current[key]) {
+      inputRefs.current[key].focus();
+    }
+  };
+
+  const updateWeightValue = (newValue) => {
+    if (!columnsData || columnsData.length === 0) return;
     const updatedData = [...columnsData];
-    updatedData[colIndex].inputs[inputIndex] = {
-      ...updatedData[colIndex].inputs[inputIndex],
-      weight: text,
+
+    if (!updatedData[activeColIndex]) {
+      setActiveColIndex(0);
+      return;
+    }
+
+    if (!updatedData[activeColIndex].inputs[activeInputIndex]) {
+      setActiveInputIndex(0);
+    }
+
+    updatedData[activeColIndex].inputs[activeInputIndex] = {
+      ...updatedData[activeColIndex].inputs[activeInputIndex],
+      weight: newValue,
       worker_id: currentWorker ? currentWorker.id : null,
       worker_name: currentWorker ? currentWorker.name : null,
       worker_color: currentWorker ? currentWorker.color : null,
     };
 
-    const sum = updatedData[colIndex].inputs.reduce(
+    const sum = updatedData[activeColIndex].inputs.reduce(
       (acc, item) => acc + (parseFloat(item.weight) || 0),
       0,
     );
-    updatedData[colIndex].result = sum.toString();
+    updatedData[activeColIndex].result = sum.toString();
 
     setColumnsData(updatedData);
   };
 
-  const currentSelectedLabel =
-    transactionTypes.find((t) => t.value === selectedType)?.label ||
-    "Chọn loại";
+  const handleKeyPress = (num) => {
+    if (!columnsData || !columnsData[activeColIndex]) return;
+    const currentVal =
+      columnsData[activeColIndex].inputs[activeInputIndex]?.weight || "";
+    updateWeightValue(currentVal + num);
+  };
+
+  const handleDelete = () => {
+    if (!columnsData || !columnsData[activeColIndex]) return;
+    const currentVal =
+      columnsData[activeColIndex].inputs[activeInputIndex]?.weight || "";
+    if (currentVal.length > 0) {
+      updateWeightValue(currentVal.slice(0, -1));
+    }
+  };
+
+  // Nút Lùi (<): Chuyển focus sang ô trước đó
+  const handlePrevInput = () => {
+    if (activeInputIndex > 0) {
+      focusInput(activeColIndex, activeInputIndex - 1);
+    } else if (activeColIndex > 0) {
+      const prevColIndex = activeColIndex - 1;
+      const lastInputIdx = columnsData[prevColIndex].inputs.length - 1;
+      focusInput(prevColIndex, lastInputIdx);
+    }
+  };
+
+  // Nút Tiến (>): Chuyển focus sang ô tiếp theo
+  const handleNextInput = () => {
+    if (!columnsData || !columnsData[activeColIndex]) return;
+    const currentInputs = columnsData[activeColIndex].inputs || [];
+    if (activeInputIndex < currentInputs.length - 1) {
+      focusInput(activeColIndex, activeInputIndex + 1);
+    } else if (activeColIndex < columnsData.length - 1) {
+      focusInput(activeColIndex + 1, 0);
+    }
+  };
 
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
@@ -124,7 +188,7 @@ export default function AddScreen() {
             paddingTop: 20,
             borderRadius: 8,
           }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 260 }}
         >
           <View
             style={{
@@ -133,94 +197,107 @@ export default function AddScreen() {
               justifyContent: "space-between",
             }}
           >
-            {columnsData?.map((item, index) => (
-              <View key={item.id} style={cardStyle}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "bold",
-                    color: "#333",
-                    marginBottom: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  Cụm #{index + 1}
-                </Text>
-
-                {item.inputs.map((inputItem, inputIdx) => (
-                  <TextInput
-                    key={inputIdx}
-                    style={{
-                      height: 28,
-                      borderWidth: 0,
-                      borderRadius: 6,
-                      paddingBottom: 0,
-                      paddingTop: 0,
-                      paddingLeft: 10,
-                      textAlignVertical: "center",
-                      marginBottom: 4,
-                      fontSize: 16,
-                      backgroundColor:
-                        inputItem.worker_color === DEFAULT_WORKER_COLOR
-                          ? "#fff"
-                          : inputItem.worker_color || "#fff",
-                      color: "#333333",
-                      fontWeight: "600",
-                    }}
-                    placeholder={`Ô ${inputIdx + 1}`}
-                    placeholderTextColor="#aaa"
-                    keyboardType="numeric"
-                    value={inputItem.weight}
-                    onChangeText={(text) =>
-                      handleInputChange(text, index, inputIdx)
-                    }
-                    onFocus={() => {
-                      if (inputItem.worker_id) {
-                        const foundWorker = colorArray.find(
-                          (w) => w.id === inputItem.worker_id,
-                        );
-                        if (foundWorker) {
-                          setCurrentWorker(foundWorker);
-                        }
-                      }
-                    }}
-                  />
-                ))}
-
-                <View
-                  style={{
-                    marginTop: 4,
-                    padding: 6,
-                    backgroundColor: "#e6f4ea",
-                    borderRadius: 6,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+            {columnsData && columnsData.length > 0 ? (
+              columnsData.map((item, colIdx) => (
+                <View key={item.id || colIdx} style={cardStyle}>
                   <Text
                     style={{
                       fontSize: 14,
-                      color: "#137333",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Kết quả:
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
                       fontWeight: "bold",
-                      color: "#137333",
+                      color: "#333",
+                      marginBottom: 8,
+                      textAlign: "center",
                     }}
                   >
-                    {item.result}
+                    Cụm #{colIdx + 1}
                   </Text>
-                </View>
-              </View>
-            ))}
 
-            {/* ================= Ô TỔNG KẾT CHUNG ================= */}
+                  {item.inputs &&
+                    item.inputs.map((inputItem, inputIdx) => {
+                      const key = `${colIdx}-${inputIdx}`;
+                      return (
+                        <TextInput
+                          key={inputIdx}
+                          ref={(el) => (inputRefs.current[key] = el)} // Gán ref cho từng ô
+                          style={{
+                            height: 28,
+                            borderWidth: 0, // Đã loại bỏ hoàn toàn border theo yêu cầu
+                            borderColor: "transparent",
+                            borderRadius: 6,
+                            paddingBottom: 0,
+                            paddingTop: 0,
+                            paddingLeft: 10,
+                            textAlignVertical: "center",
+                            marginBottom: 4,
+                            fontSize: 16,
+                            backgroundColor:
+                              inputItem.worker_color === DEFAULT_WORKER_COLOR
+                                ? "#fff"
+                                : inputItem.worker_color || "#fff",
+                            color: "#333333",
+                            fontWeight: "600",
+                          }}
+                          placeholder={`Ô ${inputIdx + 1}`}
+                          placeholderTextColor="#aaa"
+                          keyboardType="numeric"
+                          value={inputItem.weight || ""}
+                          showSoftInputOnFocus={false}
+                          onFocus={() => {
+                            setActiveColIndex(colIdx);
+                            setActiveInputIndex(inputIdx);
+                            setIsKeyboardVisible(true);
+                            if (inputItem.worker_id) {
+                              const foundWorker = colorArray.find(
+                                (w) => w.id === inputItem.worker_id,
+                              );
+                              if (foundWorker) {
+                                setCurrentWorker(foundWorker);
+                              }
+                            }
+                          }}
+                        />
+                      );
+                    })}
+
+                  <View
+                    style={{
+                      marginTop: 4,
+                      padding: 6,
+                      backgroundColor: "#e6f4ea",
+                      borderRadius: 6,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: "#137333",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Kết quả:
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "bold",
+                        color: "#137333",
+                      }}
+                    >
+                      {item.result || "0"}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={{ textAlign: "center", width: "100%", padding: 20 }}>
+                Đang tải dữ liệu cột...
+              </Text>
+            )}
+
+            {/* Ô TỔNG KẾT CHUNG */}
             <View style={[cardStyle, { justifyContent: "space-between" }]}>
               <View>
                 <Text
@@ -234,56 +311,6 @@ export default function AddScreen() {
                 >
                   Tổng kết chung
                 </Text>
-
-                {/* Nút chọn loại giao dịch */}
-                <View style={{ marginBottom: 8 }}>
-                  <View ref={typeModal.anchorRef} collapsable={false}>
-                    <TouchableOpacity
-                      style={{
-                        backgroundColor: "#f8f9fa",
-                        padding: 8,
-                        borderRadius: 6,
-                        borderWidth: 1,
-                        borderColor: "#007AFF",
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                      onPress={() => typeModal.open()}
-                    >
-                      <Text
-                        style={{
-                          color: "#333",
-                          fontWeight: "bold",
-                          fontSize: 13,
-                        }}
-                      >
-                        {currentSelectedLabel}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={{
-                        backgroundColor: "#007AFF",
-                        padding: 10,
-                        borderRadius: 6,
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                      onPress={addColumn}
-                    >
-                      <Text
-                        style={{
-                          color: "#fff",
-                          fontWeight: "bold",
-                          fontSize: 14,
-                        }}
-                      >
-                        + Thêm cột
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
               </View>
 
               <View>
@@ -335,7 +362,7 @@ export default function AddScreen() {
                       color: "#137333",
                     }}
                   >
-                    {totalSummary}
+                    {totalSummary || "0"}
                   </Text>
                 </View>
               </View>
@@ -344,97 +371,16 @@ export default function AddScreen() {
         </ScrollView>
       </Animated.View>
 
-      {/* ================= MODAL CHỌN LOẠI GIAO DỊCH ================= */}
-      {typeModal.visible && (
-        <Portal>
-          <Animated.View
-            style={[
-              {
-                position: "absolute",
-                width: typeModal.MAX_RADIUS * 2,
-                height: typeModal.MAX_RADIUS * 2,
-                borderRadius: typeModal.MAX_RADIUS,
-                backgroundColor: "#00000022",
-                left: typeModal.SCREEN_WIDTH / 2 - typeModal.MAX_RADIUS,
-                top: typeModal.SCREEN_HEIGHT / 2 - typeModal.MAX_RADIUS,
-              },
-              typeModal.backdropStyle,
-            ]}
-          >
-            <Pressable
-              onPress={() => typeModal.close()}
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                right: 0,
-                left: 0,
-                backgroundColor: "#00000022",
-              }}
-            />
-          </Animated.View>
-
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "transparent",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Animated.View
-              style={[
-                {
-                  width: 260,
-                  backgroundColor: "#fff",
-                  borderRadius: 12,
-                  padding: 16,
-                  gap: 8,
-                },
-                typeModal.animatedStyle,
-              ]}
-            >
-              <Text
-                style={{
-                  fontWeight: "600",
-                  fontSize: 16,
-                  textAlign: "center",
-                  marginBottom: 4,
-                }}
-              >
-                Chọn loại giao dịch
-              </Text>
-
-              {transactionTypes.map((type) => (
-                <TouchableOpacity
-                  key={type.value}
-                  style={{
-                    paddingVertical: 12,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
-                    backgroundColor:
-                      selectedType === type.value ? "#e6f4ea" : "transparent",
-                  }}
-                  onPress={() => {
-                    setSelectedType(type.value);
-                    typeModal.close();
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      color: selectedType === type.value ? "#137333" : "#333",
-                      fontWeight:
-                        selectedType === type.value ? "bold" : "normal",
-                    }}
-                  >
-                    {type.label} + {type.value}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </Animated.View>
-          </View>
-        </Portal>
+      {/* BÀN PHÍM CUSTOM */}
+      {isKeyboardVisible && (
+        <CustomKeypadAdvanced
+          onKeyPress={handleKeyPress}
+          onDelete={handleDelete}
+          onPrevInput={handlePrevInput}
+          onNextInput={handleNextInput}
+          onHideKeyboard={() => setIsKeyboardVisible(false)}
+          currentWorkerId={currentWorker?.id}
+        />
       )}
     </View>
   );

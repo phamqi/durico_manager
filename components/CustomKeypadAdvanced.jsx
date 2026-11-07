@@ -1,0 +1,525 @@
+import { useDuricoAlert, useGlobalState } from "@/context";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
+
+import {
+  Animated,
+  Modal,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+export default function CustomKeypadAdvanced({
+  onKeyPress,
+  onDelete,
+  onPrevInput,
+  onNextInput,
+  onHideKeyboard,
+}) {
+  const { selectedType, setSelectedType, handleReset, addColumn } =
+    useGlobalState();
+  const alert = useDuricoAlert();
+  const [showTypeModal, setShowTypeModal] = useState(false);
+  const [typeBtnLayout, setTypeBtnLayout] = useState(null);
+  const typeBtnRef = useRef(null);
+
+  // Animation cho popup nở bung từ nút
+  const popupScale = useRef(new Animated.Value(0.1)).current;
+  const popupOpacity = useRef(new Animated.Value(0)).current;
+
+  // Animation cho nút Chọn Type (phình to và mờ dần)
+  const btnScaleX = useRef(new Animated.Value(1)).current;
+  const btnScaleY = useRef(new Animated.Value(1)).current;
+  const btnOpacity = useRef(new Animated.Value(1)).current;
+
+  const keyboardTranslateY = useRef(new Animated.Value(300)).current;
+
+  const transactionTypes = [
+    { label: "Thu nhập", value: 0 },
+    { label: "Ca phe", value: 1 },
+    { label: "Sau rieng", value: 2 },
+  ];
+
+  const currentSelectedLabel =
+    transactionTypes.find((t) => t.value === selectedType)?.label ||
+    "Chọn loại";
+
+  const handleOpenTypeModal = () => {
+    if (typeBtnRef.current) {
+      typeBtnRef.current.measureInWindow((x, y, width, height) => {
+        setTypeBtnLayout({ x, y, width, height });
+
+        popupScale.setValue(0.1);
+        popupOpacity.setValue(0);
+        btnScaleX.setValue(1);
+        btnScaleY.setValue(1);
+        btnOpacity.setValue(1);
+
+        setShowTypeModal(true);
+
+        requestAnimationFrame(() => {
+          Animated.sequence([
+            Animated.parallel([
+              Animated.timing(btnScaleX, {
+                toValue: 1.5,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(btnScaleY, {
+                toValue: 1.1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(btnOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.parallel([
+              Animated.spring(popupScale, {
+                toValue: 1,
+                friction: 6,
+                tension: 80,
+                useNativeDriver: true,
+              }),
+              Animated.timing(popupOpacity, {
+                toValue: 1,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]).start();
+        });
+      });
+    }
+  };
+
+  const handleCloseTypeModal = () => {
+    Animated.parallel([
+      Animated.timing(popupScale, {
+        toValue: 0.15,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(popupOpacity, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(btnScaleX, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(btnScaleY, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(btnOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowTypeModal(false);
+    });
+  };
+
+  const handleHideKeyboardSmooth = () => {
+    Animated.timing(keyboardTranslateY, {
+      toValue: 300,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      if (typeof onHideKeyboard === "function") {
+        onHideKeyboard();
+      }
+    });
+  };
+
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+
+  const handleResetPress = () => {
+    if (!isConfirmingReset) {
+      setIsConfirmingReset(true);
+      alert.toast("Chạm lần nữa để làm mới");
+      setTimeout(() => {
+        setIsConfirmingReset(false);
+      }, 3000);
+    } else {
+      handleReset();
+      setIsConfirmingReset(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      keyboardTranslateY.setValue(300); // Đưa về vị trí ẩn trước cho chắc ăn
+      Animated.spring(keyboardTranslateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 65,
+        useNativeDriver: true,
+      }).start();
+      return () => {
+        setShowTypeModal(false);
+        keyboardTranslateY.setValue(300);
+      };
+    }, []),
+  );
+
+  return (
+    <Animated.View
+      style={{
+        backgroundColor: "#ECEFF1",
+        borderTopWidth: 1,
+        borderTopColor: "#CFD8DC",
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        elevation: 10,
+        zIndex: 999,
+        transform: [{ translateY: keyboardTranslateY }],
+      }}
+    >
+      {/* THANH CÔNG CỤ TRÊN CÙNG */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          backgroundColor: "#DFE3E6",
+          paddingHorizontal: 40,
+          paddingVertical: 6,
+          alignItems: "center",
+          borderBottomWidth: 1,
+          borderBottomColor: "#CFD8DC",
+        }}
+      >
+        <Text style={{ fontSize: 14, fontWeight: "500", color: "#333" }}>
+          {currentSelectedLabel}
+        </Text>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "transparent",
+            borderRadius: 6,
+          }}
+          onPress={handleResetPress}
+        >
+          <Text
+            style={{
+              color: "#FF3B30",
+              fontWeight: "bold",
+              fontSize: 14,
+              opacity: isConfirmingReset ? 1 : 0.3,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            Lam
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* KHU VỰC BÀN PHÍM */}
+      <View style={{ flexDirection: "row", height: 230, padding: 6 }}>
+        {/* KHỐI TRÁI: Bàn phím số (3 cột) */}
+        <View
+          style={{ flex: 3, justifyContent: "space-between", marginRight: 6 }}
+        >
+          {/* Hàng 1: [1, 2, 3] */}
+          <View style={{ flexDirection: "row", flex: 1 }}>
+            {["1", "2", "3"].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFF",
+                  margin: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 6,
+                  elevation: 1,
+                }}
+                onPress={() => onKeyPress(num)}
+              >
+                <Text
+                  style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
+                >
+                  {num}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Hàng 2: [4, 5, 6] */}
+          <View style={{ flexDirection: "row", flex: 1 }}>
+            {["4", "5", "6"].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFF",
+                  margin: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 6,
+                  elevation: 1,
+                }}
+                onPress={() => onKeyPress(num)}
+              >
+                <Text
+                  style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
+                >
+                  {num}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Hàng 3: [7, 8, 9] */}
+          <View style={{ flexDirection: "row", flex: 1 }}>
+            {["7", "8", "9"].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFF",
+                  margin: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 6,
+                  elevation: 1,
+                }}
+                onPress={() => onKeyPress(num)}
+              >
+                <Text
+                  style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
+                >
+                  {num}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Hàng 4: [<, 0, >] */}
+          <View style={{ flexDirection: "row", flex: 1 }}>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "#CFD8DC",
+                margin: 3,
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 6,
+              }}
+              onPress={onPrevInput}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                &lt;
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "#FFF",
+                margin: 3,
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 6,
+                elevation: 1,
+              }}
+              onPress={() => onKeyPress("0")}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                0
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "#CFD8DC",
+                margin: 3,
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 6,
+              }}
+              onPress={onNextInput}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                &gt;
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* KHỐI PHẢI: Cột chức năng (Đã ép đồng bộ chiều rộng và căn giữa tuyệt đối) */}
+        <View style={{ flex: 1, justifyContent: "space-between" }}>
+          {/* Nút Chon */}
+          <Animated.View
+            style={{
+              flex: 1,
+              margin: 3,
+              transform: [{ scaleX: btnScaleX }, { scaleY: btnScaleY }],
+              opacity: btnOpacity,
+              transformOrigin: "center center",
+            }}
+          >
+            <TouchableOpacity
+              ref={typeBtnRef}
+              collapsable={false}
+              style={{
+                flex: 1,
+                backgroundColor: "#007AFF",
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 6,
+                width: "100%",
+              }}
+              onPress={handleOpenTypeModal}
+            >
+              <Text style={{ color: "#FFF", fontWeight: "bold", fontSize: 15 }}>
+                Chon
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Nút + Cột */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "#BBDEFB",
+              margin: 3,
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: 6,
+            }}
+            onPress={addColumn}
+          >
+            <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
+              + Cột
+            </Text>
+          </TouchableOpacity>
+
+          {/* Nút Xóa (⌫) */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "#FFCDD2",
+              margin: 3,
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: 6,
+            }}
+            onPress={onDelete}
+          >
+            <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
+              ⌫
+            </Text>
+          </TouchableOpacity>
+
+          {/* Nút Ẩn bàn phím (▼) */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "#CFD8DC",
+              margin: 3,
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: 6,
+            }}
+            onPress={handleHideKeyboardSmooth}
+          >
+            <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
+              ▼
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* POPUP CHỌN TYPE */}
+      <Modal visible={showTypeModal} transparent animationType="none">
+        <Pressable style={{ flex: 1 }} onPress={handleCloseTypeModal}>
+          {typeBtnLayout && (
+            <Animated.View
+              style={{
+                position: "absolute",
+                top: typeBtnLayout.y,
+                left: typeBtnLayout.x + typeBtnLayout.width - 180,
+                width: 180,
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                borderRadius: 12,
+                padding: 10,
+                transformOrigin: "top right",
+                transform: [
+                  {
+                    translateX: popupScale.interpolate({
+                      inputRange: [0.15, 1],
+                      outputRange: [-20, 0],
+                    }),
+                  },
+                  {
+                    translateY: popupScale.interpolate({
+                      inputRange: [0.15, 1],
+                      outputRange: [35, 0],
+                    }),
+                  },
+                  { scale: popupScale },
+                ],
+                opacity: popupOpacity,
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "600",
+                  fontSize: 13,
+                  textAlign: "center",
+                  marginBottom: 4,
+                  color: "#444",
+                }}
+              >
+                Chọn giao dịch
+              </Text>
+              {transactionTypes.map((type) => (
+                <View
+                  key={type.value}
+                  style={{ backgroundColor: "transparent" }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      padding: 10,
+                      borderRadius: 6,
+                      backgroundColor: "transparent",
+                    }}
+                    onPress={() => {
+                      setSelectedType(type.value);
+                      handleCloseTypeModal();
+                    }}
+                  >
+                    <Text
+                      style={{
+                        backgroundColor: "transparent",
+                        fontSize: 13,
+                        color: selectedType === type.value ? "#137333" : "#333",
+                        fontWeight:
+                          selectedType === type.value ? "bold" : "normal",
+                      }}
+                    >
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </Animated.View>
+          )}
+        </Pressable>
+      </Modal>
+    </Animated.View>
+  );
+}
