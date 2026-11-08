@@ -3,13 +3,7 @@ import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { useDuricoAlert, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
@@ -91,7 +85,6 @@ export default function AddScreen() {
       0,
     );
     updatedData[activeColIndex].result = sum.toString();
-
     setColumnsData(updatedData);
   };
 
@@ -132,22 +125,6 @@ export default function AddScreen() {
       focusInput(activeColIndex + 1, 0);
     }
   };
-
-  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
-
-  const handleResetPress = () => {
-    if (!isConfirmingReset) {
-      setIsConfirmingReset(true);
-      alert.toast("Chạm lần nữa để làm mới");
-      setTimeout(() => {
-        setIsConfirmingReset(false);
-      }, 3000);
-    } else {
-      handleReset();
-      setIsConfirmingReset(false);
-    }
-  };
-
   const cardStyle = {
     width: "48%",
     height: 248,
@@ -314,28 +291,6 @@ export default function AddScreen() {
               </View>
 
               <View>
-                <TouchableOpacity
-                  style={{
-                    padding: 10,
-                    borderRadius: 6,
-                    alignItems: "center",
-                    marginBottom: 8,
-                    borderWidth: 1,
-                    borderColor: "#FF3B30",
-                    backgroundColor: isConfirmingReset ? "#FF3B30" : "#f1f1f2",
-                  }}
-                  onPress={handleResetPress}
-                >
-                  <Text
-                    style={{
-                      color: isConfirmingReset ? "#FFF" : "#333",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Làm mới
-                  </Text>
-                </TouchableOpacity>
-
                 <View
                   style={{
                     padding: 6,

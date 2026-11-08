@@ -1,7 +1,15 @@
 import { useDuricoAlert, useGlobalState } from "@/context";
 import { useFocusEffect } from "expo-router";
+import {
+  ChevronDown,
+  ChevronUp,
+  Delete,
+  KeyboardOff,
+  Plus,
+  RotateCcw,
+  ScanText,
+} from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
-
 import {
   Animated,
   Modal,
@@ -158,16 +166,22 @@ export default function CustomKeypadAdvanced({
 
   useFocusEffect(
     useCallback(() => {
-      keyboardTranslateY.setValue(300); // Đưa về vị trí ẩn trước cho chắc ăn
-      Animated.spring(keyboardTranslateY, {
-        toValue: 0,
-        friction: 8,
-        tension: 65,
-        useNativeDriver: true,
-      }).start();
+      let isActive = true;
+
+      if (isActive) {
+        keyboardTranslateY.setValue(300); // Đưa về vị trí ẩn trước
+        Animated.spring(keyboardTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 65,
+          useNativeDriver: true,
+        }).start();
+      }
+
       return () => {
+        isActive = false;
         setShowTypeModal(false);
-        keyboardTranslateY.setValue(300);
+        keyboardTranslateY.setValue(300); // Ẩn ngay khi mất focus để lần sau vào lại không bị giật
       };
     }, []),
   );
@@ -184,6 +198,9 @@ export default function CustomKeypadAdvanced({
         right: 0,
         elevation: 10,
         zIndex: 999,
+        borderTopLeftRadius: 15,
+        borderTopRightRadius: 15,
+        overflow: "hidden",
         transform: [{ translateY: keyboardTranslateY }],
       }}
     >
@@ -210,18 +227,16 @@ export default function CustomKeypadAdvanced({
           }}
           onPress={handleResetPress}
         >
-          <Text
+          <RotateCcw
             style={{
               color: "#FF3B30",
               fontWeight: "bold",
               fontSize: 14,
-              opacity: isConfirmingReset ? 1 : 0.3,
+              opacity: isConfirmingReset ? 1 : 0.7,
               justifyContent: "center",
               alignItems: "center",
             }}
-          >
-            Lam
-          </Text>
+          ></RotateCcw>
         </TouchableOpacity>
       </View>
 
@@ -319,9 +334,7 @@ export default function CustomKeypadAdvanced({
               }}
               onPress={onPrevInput}
             >
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                &lt;
-              </Text>
+              <ChevronUp />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -352,16 +365,11 @@ export default function CustomKeypadAdvanced({
               }}
               onPress={onNextInput}
             >
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                &gt;
-              </Text>
+              <ChevronDown />
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* KHỐI PHẢI: Cột chức năng (Đã ép đồng bộ chiều rộng và căn giữa tuyệt đối) */}
         <View style={{ flex: 1, justifyContent: "space-between" }}>
-          {/* Nút Chon */}
           <Animated.View
             style={{
               flex: 1,
@@ -376,7 +384,7 @@ export default function CustomKeypadAdvanced({
               collapsable={false}
               style={{
                 flex: 1,
-                backgroundColor: "#007AFF",
+                backgroundColor: "#FFF",
                 justifyContent: "center",
                 alignItems: "center",
                 borderRadius: 6,
@@ -384,13 +392,9 @@ export default function CustomKeypadAdvanced({
               }}
               onPress={handleOpenTypeModal}
             >
-              <Text style={{ color: "#FFF", fontWeight: "bold", fontSize: 15 }}>
-                Chon
-              </Text>
+              <ScanText />
             </TouchableOpacity>
           </Animated.View>
-
-          {/* Nút + Cột */}
           <TouchableOpacity
             style={{
               flex: 1,
@@ -403,11 +407,10 @@ export default function CustomKeypadAdvanced({
             onPress={addColumn}
           >
             <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
-              + Cột
+              <Plus size={24} />
             </Text>
           </TouchableOpacity>
 
-          {/* Nút Xóa (⌫) */}
           <TouchableOpacity
             style={{
               flex: 1,
@@ -419,12 +422,8 @@ export default function CustomKeypadAdvanced({
             }}
             onPress={onDelete}
           >
-            <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
-              ⌫
-            </Text>
+            <Delete />
           </TouchableOpacity>
-
-          {/* Nút Ẩn bàn phím (▼) */}
           <TouchableOpacity
             style={{
               flex: 1,
@@ -436,9 +435,7 @@ export default function CustomKeypadAdvanced({
             }}
             onPress={handleHideKeyboardSmooth}
           >
-            <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
-              ▼
-            </Text>
+            <KeyboardOff />
           </TouchableOpacity>
         </View>
       </View>
