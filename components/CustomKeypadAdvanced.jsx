@@ -1,5 +1,4 @@
 import { useDuricoAlert, useGlobalState } from "@/context";
-import { useFocusEffect } from "expo-router";
 import {
   ChevronDown,
   ChevronUp,
@@ -9,7 +8,7 @@ import {
   RotateCcw,
   ScanText,
 } from "lucide-react-native";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Animated,
   Modal,
@@ -33,16 +32,12 @@ export default function CustomKeypadAdvanced({
   const [typeBtnLayout, setTypeBtnLayout] = useState(null);
   const typeBtnRef = useRef(null);
 
-  // Animation cho popup nở bung từ nút
+  // Animation riêng cho popup Chọn Type
   const popupScale = useRef(new Animated.Value(0.1)).current;
   const popupOpacity = useRef(new Animated.Value(0)).current;
-
-  // Animation cho nút Chọn Type (phình to và mờ dần)
   const btnScaleX = useRef(new Animated.Value(1)).current;
   const btnScaleY = useRef(new Animated.Value(1)).current;
   const btnOpacity = useRef(new Animated.Value(1)).current;
-
-  const keyboardTranslateY = useRef(new Animated.Value(300)).current;
 
   const transactionTypes = [
     { label: "Thu nhập", value: 0 },
@@ -137,18 +132,6 @@ export default function CustomKeypadAdvanced({
     });
   };
 
-  const handleHideKeyboardSmooth = () => {
-    Animated.timing(keyboardTranslateY, {
-      toValue: 300,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      if (typeof onHideKeyboard === "function") {
-        onHideKeyboard();
-      }
-    });
-  };
-
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
   const handleResetPress = () => {
@@ -164,44 +147,17 @@ export default function CustomKeypadAdvanced({
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      if (isActive) {
-        keyboardTranslateY.setValue(300); // Đưa về vị trí ẩn trước
-        Animated.spring(keyboardTranslateY, {
-          toValue: 0,
-          friction: 8,
-          tension: 65,
-          useNativeDriver: true,
-        }).start();
-      }
-
-      return () => {
-        isActive = false;
-        setShowTypeModal(false);
-        keyboardTranslateY.setValue(300); // Ẩn ngay khi mất focus để lần sau vào lại không bị giật
-      };
-    }, []),
-  );
-
   return (
-    <Animated.View
+    <View
       style={{
-        backgroundColor: "#ECEFF1",
-        borderTopWidth: 1,
-        borderTopColor: "#CFD8DC",
+        backgroundColor: "#DFE3E6",
         position: "absolute",
         bottom: 0,
         left: 0,
         right: 0,
-        elevation: 10,
-        zIndex: 999,
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
         overflow: "hidden",
-        transform: [{ translateY: keyboardTranslateY }],
       }}
     >
       {/* THANH CÔNG CỤ TRÊN CÙNG */}
@@ -211,32 +167,24 @@ export default function CustomKeypadAdvanced({
           justifyContent: "space-between",
           backgroundColor: "#DFE3E6",
           paddingHorizontal: 40,
-          paddingVertical: 6,
+          paddingVertical: 8,
           alignItems: "center",
-          borderBottomWidth: 1,
-          borderBottomColor: "#CFD8DC",
         }}
       >
         <Text style={{ fontSize: 14, fontWeight: "500", color: "#333" }}>
           {currentSelectedLabel}
         </Text>
         <TouchableOpacity
-          style={{
-            backgroundColor: "transparent",
-            borderRadius: 6,
-          }}
+          style={{ backgroundColor: "transparent", borderRadius: 6 }}
           onPress={handleResetPress}
         >
           <RotateCcw
+            size={24}
             style={{
               color: "#FF3B30",
-              fontWeight: "bold",
-              fontSize: 14,
               opacity: isConfirmingReset ? 1 : 0.7,
-              justifyContent: "center",
-              alignItems: "center",
             }}
-          ></RotateCcw>
+          />
         </TouchableOpacity>
       </View>
 
@@ -246,7 +194,6 @@ export default function CustomKeypadAdvanced({
         <View
           style={{ flex: 3, justifyContent: "space-between", marginRight: 6 }}
         >
-          {/* Hàng 1: [1, 2, 3] */}
           <View style={{ flexDirection: "row", flex: 1 }}>
             {["1", "2", "3"].map((num) => (
               <TouchableOpacity
@@ -271,7 +218,6 @@ export default function CustomKeypadAdvanced({
             ))}
           </View>
 
-          {/* Hàng 2: [4, 5, 6] */}
           <View style={{ flexDirection: "row", flex: 1 }}>
             {["4", "5", "6"].map((num) => (
               <TouchableOpacity
@@ -296,7 +242,6 @@ export default function CustomKeypadAdvanced({
             ))}
           </View>
 
-          {/* Hàng 3: [7, 8, 9] */}
           <View style={{ flexDirection: "row", flex: 1 }}>
             {["7", "8", "9"].map((num) => (
               <TouchableOpacity
@@ -321,12 +266,11 @@ export default function CustomKeypadAdvanced({
             ))}
           </View>
 
-          {/* Hàng 4: [<, 0, >] */}
           <View style={{ flexDirection: "row", flex: 1 }}>
             <TouchableOpacity
               style={{
                 flex: 1,
-                backgroundColor: "#CFD8DC",
+                backgroundColor: "#FFF",
                 margin: 3,
                 justifyContent: "center",
                 alignItems: "center",
@@ -357,7 +301,7 @@ export default function CustomKeypadAdvanced({
             <TouchableOpacity
               style={{
                 flex: 1,
-                backgroundColor: "#CFD8DC",
+                backgroundColor: "#FFF",
                 margin: 3,
                 justifyContent: "center",
                 alignItems: "center",
@@ -369,6 +313,8 @@ export default function CustomKeypadAdvanced({
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* KHỐI PHẢI */}
         <View style={{ flex: 1, justifyContent: "space-between" }}>
           <Animated.View
             style={{
@@ -376,7 +322,6 @@ export default function CustomKeypadAdvanced({
               margin: 3,
               transform: [{ scaleX: btnScaleX }, { scaleY: btnScaleY }],
               opacity: btnOpacity,
-              transformOrigin: "center center",
             }}
           >
             <TouchableOpacity
@@ -395,6 +340,7 @@ export default function CustomKeypadAdvanced({
               <ScanText />
             </TouchableOpacity>
           </Animated.View>
+
           <TouchableOpacity
             style={{
               flex: 1,
@@ -424,6 +370,8 @@ export default function CustomKeypadAdvanced({
           >
             <Delete />
           </TouchableOpacity>
+
+          {/* Bấm 1 lần ăn ngay, ẩn bàn phím lập tức */}
           <TouchableOpacity
             style={{
               flex: 1,
@@ -433,7 +381,7 @@ export default function CustomKeypadAdvanced({
               alignItems: "center",
               borderRadius: 6,
             }}
-            onPress={handleHideKeyboardSmooth}
+            onPress={onHideKeyboard}
           >
             <KeyboardOff />
           </TouchableOpacity>
@@ -453,7 +401,6 @@ export default function CustomKeypadAdvanced({
                 backgroundColor: "rgba(255, 255, 255, 0.8)",
                 borderRadius: 12,
                 padding: 10,
-                transformOrigin: "top right",
                 transform: [
                   {
                     translateX: popupScale.interpolate({
@@ -501,7 +448,6 @@ export default function CustomKeypadAdvanced({
                   >
                     <Text
                       style={{
-                        backgroundColor: "transparent",
                         fontSize: 13,
                         color: selectedType === type.value ? "#137333" : "#333",
                         fontWeight:
@@ -517,6 +463,6 @@ export default function CustomKeypadAdvanced({
           )}
         </Pressable>
       </Modal>
-    </Animated.View>
+    </View>
   );
 }

@@ -4,7 +4,12 @@ import { useDuricoAlert, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, TextInput, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
@@ -17,12 +22,37 @@ export default function AddScreen() {
     currentWorker,
     setCurrentWorker,
     totalSummary,
-    selectedType,
-    setSelectedType,
-    handleReset,
   } = useGlobalState();
   const alert = useDuricoAlert();
   const typeModal = useAnchoredModalReanimated();
+  const animatedStyle = useAddScreenEnterAnimation();
+
+  const [activeColIndex, setActiveColIndex] = useState(0);
+  const [activeInputIndex, setActiveInputIndex] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Shared value cho animation bàn phím (bắt đầu ở 300 tức là nằm ẩn bên dưới)
+  const translateY = useSharedValue(300);
+
+  // Hàm mở bàn phím mượt mà
+  const showKeyboard = () => {
+    setIsKeyboardVisible(true);
+    translateY.value = withTiming(0, { duration: 200 });
+  };
+
+  // Hàm ẩn bàn phím mượt mà rồi mới unmount component
+  const hideKeyboard = () => {
+    translateY.value = withTiming(300, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(setIsKeyboardVisible)(false);
+      }
+    });
+  };
+
+  // Style animation chạy trên UI thread (cực kỳ mượt, không giật lag)
+  const animatedKeyboardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const pathname = usePathname();
 
@@ -30,13 +60,10 @@ export default function AddScreen() {
     if (typeModal?.visible) {
       typeModal.close();
     }
+    if (isKeyboardVisible == true) {
+      hideKeyboard();
+    }
   }, [pathname]);
-
-  const animatedStyle = useAddScreenEnterAnimation();
-
-  const [activeColIndex, setActiveColIndex] = useState(0);
-  const [activeInputIndex, setActiveInputIndex] = useState(0);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   // Tạo một Ref để lưu trữ danh sách các ô TextInput nhằm điều khiển focus thủ công
   const inputRefs = useRef({});
@@ -104,7 +131,6 @@ export default function AddScreen() {
     }
   };
 
-  // Nút Lùi (<): Chuyển focus sang ô trước đó
   const handlePrevInput = () => {
     if (activeInputIndex > 0) {
       focusInput(activeColIndex, activeInputIndex - 1);
@@ -115,7 +141,6 @@ export default function AddScreen() {
     }
   };
 
-  // Nút Tiến (>): Chuyển focus sang ô tiếp theo
   const handleNextInput = () => {
     if (!columnsData || !columnsData[activeColIndex]) return;
     const currentInputs = columnsData[activeColIndex].inputs || [];
@@ -125,6 +150,7 @@ export default function AddScreen() {
       focusInput(activeColIndex + 1, 0);
     }
   };
+
   const cardStyle = {
     width: "48%",
     height: 248,
@@ -195,10 +221,10 @@ export default function AddScreen() {
                       return (
                         <TextInput
                           key={inputIdx}
-                          ref={(el) => (inputRefs.current[key] = el)} // Gán ref cho từng ô
+                          ref={(el) => (inputRefs.current[key] = el)}
                           style={{
                             height: 28,
-                            borderWidth: 0, // Đã loại bỏ hoàn toàn border theo yêu cầu
+                            borderWidth: 0,
                             borderColor: "transparent",
                             borderRadius: 6,
                             paddingBottom: 0,
@@ -222,7 +248,7 @@ export default function AddScreen() {
                           onFocus={() => {
                             setActiveColIndex(colIdx);
                             setActiveInputIndex(inputIdx);
-                            setIsKeyboardVisible(true);
+                            showKeyboard(); // Gọi hàm hiển thị bàn phím mượt mà
                             if (inputItem.worker_id) {
                               const foundWorker = colorArray.find(
                                 (w) => w.id === inputItem.worker_id,
@@ -326,16 +352,30 @@ export default function AddScreen() {
         </ScrollView>
       </Animated.View>
 
-      {/* BÀN PHÍM CUSTOM */}
+      {/* BÀN PHÍM CUSTOM DÙNG REANIMATED (MƯỢT VÀ KHÔNG CHẶN CHẠM) */}
       {isKeyboardVisible && (
-        <CustomKeypadAdvanced
-          onKeyPress={handleKeyPress}
-          onDelete={handleDelete}
-          onPrevInput={handlePrevInput}
-          onNextInput={handleNextInput}
-          onHideKeyboard={() => setIsKeyboardVisible(false)}
-          currentWorkerId={currentWorker?.id}
-        />
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 999,
+            },
+            animatedKeyboardStyle,
+          ]}
+          pointerEvents="box-none"
+        >
+          <CustomKeypadAdvanced
+            onKeyPress={handleKeyPress}
+            onDelete={handleDelete}
+            onPrevInput={handlePrevInput}
+            onNextInput={handleNextInput}
+            onHideKeyboard={hideKeyboard}
+            currentWorkerId={currentWorker?.id}
+          />
+        </Animated.View>
       )}
     </View>
   );

@@ -12,12 +12,13 @@ export default function Palette({ setShowPalette, addColorModal }) {
       style={{
         position: "absolute",
         bottom: 0,
-        left: 0,
+        left: -10,
         transform: [{ translateY: -40 }],
         alignItems: "center",
         backgroundColor: "transparent",
         elevation: 6,
         gap: 10,
+        paddingHorizontal: 10,
       }}
     >
       <View ref={addColorModal.anchorRef}>
