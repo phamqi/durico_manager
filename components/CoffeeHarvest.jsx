@@ -36,7 +36,7 @@ export default function CoffeeHarvest({ scrollY }) {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#bc3c3c", paddingTop: 10 }}>
+    <View style={{ flex: 1, paddingTop: 10 }}>
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -48,7 +48,11 @@ export default function CoffeeHarvest({ scrollY }) {
         showsVerticalScrollIndicator={false}
       >
         {loading ? (
-          <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
+          <View
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
+          </View>
         ) : (
           transactionArray?.map((item, index) => (
             <TransactionCard

@@ -13,9 +13,9 @@ import CoffeeTransaction from "./CoffeeTransaction";
 import DurianTransaction from "./DurianTransaction";
 
 const TABS = [
-  { key: 0, title: "Cà phê" },
-  { key: 1, title: "Bán cà phê" },
-  { key: 2, title: "Sầu riêng" },
+  { key: 0, title: "Cà phê", bgColor: "#db4545" },
+  { key: 1, title: "Bán cà phê", bgColor: "#4734b5" },
+  { key: 2, title: "Sầu riêng", bgColor: "#2fba5d" },
 ];
 
 function IndicatorBar({ isActive }) {
@@ -55,7 +55,7 @@ export default function TransactionPager() {
     const paddingTop = interpolate(
       currentScrollY.value,
       [0, 60],
-      [50, 30],
+      [40, 30],
       Extrapolation.CLAMP,
     );
 
@@ -69,7 +69,7 @@ export default function TransactionPager() {
         style={{
           paddingVertical: 12,
           paddingHorizontal: 16,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: TABS[activeTab].bgColor,
           borderBottomWidth: 1,
           borderBottomColor: "#E5E7EB",
           alignItems: "center",
@@ -94,15 +94,11 @@ export default function TransactionPager() {
           ))}
         </View>
       </View>
-
-      {/* PagerView */}
       <PagerView
         ref={pagerRef}
         style={{ flex: 1 }}
         initialPage={0}
         onPageSelected={(e) => {
-          // Khi đổi tab, chỉ cập nhật activeTab.
-          // KHÔNG reset scrollY.value = 0 nữa để giữ nguyên trạng thái cuộn của từng tab!
           setActiveTab(e.nativeEvent.position);
         }}
       >

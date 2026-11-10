@@ -232,6 +232,8 @@ export default function CustomTabBar() {
                 autoCorrect={false}
                 spellCheck={false}
                 textContentType="none"
+                autoComplete="off"
+                importantForAutofill="no"
                 editable={tempColor === DEFAULT_WORKER_COLOR ? false : true}
                 style={{
                   borderWidth: 1,
