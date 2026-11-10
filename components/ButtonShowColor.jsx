@@ -1,4 +1,5 @@
 import { DEFAULT_WORKER_COLOR } from "@/constants";
+import { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 import { useGlobalState } from "../context";
 
@@ -9,6 +10,7 @@ export default function ButtonShowColor({ isTouch }) {
     isTouch();
   };
 
+  useEffect(() => {}, [currentWorker]);
   return (
     <TouchableOpacity
       onPress={TouchShowPalette}

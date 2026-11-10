@@ -55,6 +55,7 @@ export const StateProvider = ({ children }) => {
       await initDB();
       const rows = await getWorkersByYear();
       setColorArray(rows);
+      setCurrentWorker(rows[0]);
       const amount = await getAmountByYear();
       setAmount(amount);
       setLoading(false);

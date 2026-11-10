@@ -68,39 +68,7 @@ export default function AddScreen() {
       }
     }
   }, [columnsData]);
-  const scrollViewRef = useRef(null);
-  const scrollToActiveInput = (colIdx, inputIdx) => {
-    const key = `${colIdx}-${inputIdx}`;
-    const inputRef = inputRefs.current[key];
 
-    if (inputRef && scrollViewRef.current) {
-      // Hàm measure đo đạc vị trí thực tế trên màn hình
-      inputRef.measure((x, y, width, height, pageX, pageY) => {
-        // pageY là tọa độ tuyệt đối của ô input so với toàn bộ màn hình
-        // Bạn có thể cuộn ScrollView dựa trên pageY này
-
-        // Tính toán chiều cao bàn phím custom của bạn (ví dụ khoảng 280px)
-        // và trừ đi để ô input dịch chuyển lên ngay phía trên bàn phím một khoảng thoáng
-        const CUSTOM_KEYBOARD_HEIGHT = 280;
-        const screenHeight =
-          require("react-native").Dimensions.get("window").height;
-
-        // Nếu vị trí của ô input nằm thấp hơn ranh giới an toàn trên bàn phím
-        if (pageY > screenHeight - CUSTOM_KEYBOARD_HEIGHT - 60) {
-          // Khoảng cách cần cuộn thêm chính là phần bị che khuất
-          const offsetToScroll =
-            pageY - (screenHeight - CUSTOM_KEYBOARD_HEIGHT - 100);
-
-          // Gọi lệnh scroll tương đối hoặc cuộn tuyệt đối tùy cấu trúc ScrollView của bạn
-          // Hoặc đơn giản hơn là cuộn thẳng tới vị trí Y hiện tại + offset cần bù
-          scrollViewRef.current.scrollTo({
-            y: offsetToScroll > 0 ? offsetToScroll : 0,
-            animated: true,
-          });
-        }
-      });
-    }
-  };
   // Hàm hỗ trợ focus vào ô TextInput tương ứng khi dùng nút < và >
   const focusInput = (colIdx, inputIdx) => {
     setActiveColIndex(colIdx);
@@ -108,7 +76,6 @@ export default function AddScreen() {
     const key = `${colIdx}-${inputIdx}`;
     if (inputRefs.current[key]) {
       inputRefs.current[key].focus();
-      // scrollToActiveInput(colIdx, inputIdx);
     }
   };
   const hideKeyboard = () => {
@@ -202,7 +169,6 @@ export default function AddScreen() {
     shadowRadius: 2,
     marginBottom: 10,
   };
-  useEffect(() => {}, []);
   return (
     <View style={{ flex: 1 }}>
       <Animated.View
@@ -220,7 +186,6 @@ export default function AddScreen() {
       >
         <Text style={{ fontSize: 18, marginBottom: 10 }}>Thêm lịch sử</Text>
         <ScrollView
-          ref={scrollViewRef}
           style={{
             flex: 1,
             backgroundColor: "#f8f9fa",
@@ -286,11 +251,10 @@ export default function AddScreen() {
                           keyboardType="numeric"
                           value={inputItem.weight || ""}
                           showSoftInputOnFocus={false}
-                          contextMenuHidden={true} // Ẩn hoàn toàn menu copy/paste/select khi long-press (Chạy cực tốt trên iOS & Android)
+                          contextMenuHidden={true}
                           selectTextOnFocus={false}
                           caretHidden={true}
                           onFocus={() => {
-                            // KeyboardController.dismiss({ keepFocus: true });
                             Keyboard.dismiss();
                             setActiveColIndex(colIdx);
                             setActiveInputIndex(inputIdx);
