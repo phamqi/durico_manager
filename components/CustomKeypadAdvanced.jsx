@@ -146,7 +146,7 @@ export default function CustomKeypadAdvanced({
       setIsConfirmingReset(false);
     }
   };
-
+  console.log("custom keypad rerender");
   return (
     <View
       style={{

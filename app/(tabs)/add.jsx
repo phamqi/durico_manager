@@ -3,7 +3,7 @@ import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { useDuricoAlert, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
+import { Keyboard, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -41,13 +41,6 @@ export default function AddScreen() {
   };
 
   // Hàm ẩn bàn phím mượt mà rồi mới unmount component
-  const hideKeyboard = () => {
-    translateY.value = withTiming(300, { duration: 200 }, (finished) => {
-      if (finished) {
-        runOnJS(setIsKeyboardVisible)(false);
-      }
-    });
-  };
 
   // Style animation chạy trên UI thread (cực kỳ mượt, không giật lag)
   const animatedKeyboardStyle = useAnimatedStyle(() => ({
@@ -75,7 +68,39 @@ export default function AddScreen() {
       }
     }
   }, [columnsData]);
+  const scrollViewRef = useRef(null);
+  const scrollToActiveInput = (colIdx, inputIdx) => {
+    const key = `${colIdx}-${inputIdx}`;
+    const inputRef = inputRefs.current[key];
 
+    if (inputRef && scrollViewRef.current) {
+      // Hàm measure đo đạc vị trí thực tế trên màn hình
+      inputRef.measure((x, y, width, height, pageX, pageY) => {
+        // pageY là tọa độ tuyệt đối của ô input so với toàn bộ màn hình
+        // Bạn có thể cuộn ScrollView dựa trên pageY này
+
+        // Tính toán chiều cao bàn phím custom của bạn (ví dụ khoảng 280px)
+        // và trừ đi để ô input dịch chuyển lên ngay phía trên bàn phím một khoảng thoáng
+        const CUSTOM_KEYBOARD_HEIGHT = 280;
+        const screenHeight =
+          require("react-native").Dimensions.get("window").height;
+
+        // Nếu vị trí của ô input nằm thấp hơn ranh giới an toàn trên bàn phím
+        if (pageY > screenHeight - CUSTOM_KEYBOARD_HEIGHT - 60) {
+          // Khoảng cách cần cuộn thêm chính là phần bị che khuất
+          const offsetToScroll =
+            pageY - (screenHeight - CUSTOM_KEYBOARD_HEIGHT - 100);
+
+          // Gọi lệnh scroll tương đối hoặc cuộn tuyệt đối tùy cấu trúc ScrollView của bạn
+          // Hoặc đơn giản hơn là cuộn thẳng tới vị trí Y hiện tại + offset cần bù
+          scrollViewRef.current.scrollTo({
+            y: offsetToScroll > 0 ? offsetToScroll : 0,
+            animated: true,
+          });
+        }
+      });
+    }
+  };
   // Hàm hỗ trợ focus vào ô TextInput tương ứng khi dùng nút < và >
   const focusInput = (colIdx, inputIdx) => {
     setActiveColIndex(colIdx);
@@ -83,9 +108,20 @@ export default function AddScreen() {
     const key = `${colIdx}-${inputIdx}`;
     if (inputRefs.current[key]) {
       inputRefs.current[key].focus();
+      // scrollToActiveInput(colIdx, inputIdx);
     }
   };
-
+  const hideKeyboard = () => {
+    const key = `${activeColIndex}-${activeInputIndex}`;
+    if (inputRefs.current[key]) {
+      inputRefs.current[key].blur();
+    }
+    translateY.value = withTiming(300, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(setIsKeyboardVisible)(false);
+      }
+    });
+  };
   const updateWeightValue = (newValue) => {
     if (!columnsData || columnsData.length === 0) return;
     const updatedData = [...columnsData];
@@ -108,7 +144,7 @@ export default function AddScreen() {
     };
 
     const sum = updatedData[activeColIndex].inputs.reduce(
-      (acc, item) => acc + (parseFloat(item.weight) || 0),
+      (acc, item) => acc + (Number(item.weight) || 0),
       0,
     );
     updatedData[activeColIndex].result = sum.toString();
@@ -166,7 +202,7 @@ export default function AddScreen() {
     shadowRadius: 2,
     marginBottom: 10,
   };
-
+  useEffect(() => {}, []);
   return (
     <View style={{ flex: 1 }}>
       <Animated.View
@@ -184,6 +220,7 @@ export default function AddScreen() {
       >
         <Text style={{ fontSize: 18, marginBottom: 10 }}>Thêm lịch sử</Text>
         <ScrollView
+          ref={scrollViewRef}
           style={{
             flex: 1,
             backgroundColor: "#f8f9fa",
@@ -218,14 +255,18 @@ export default function AddScreen() {
                   {item.inputs &&
                     item.inputs.map((inputItem, inputIdx) => {
                       const key = `${colIdx}-${inputIdx}`;
+                      const isActive =
+                        isKeyboardVisible &&
+                        activeColIndex === colIdx &&
+                        activeInputIndex === inputIdx;
                       return (
                         <TextInput
                           key={inputIdx}
                           ref={(el) => (inputRefs.current[key] = el)}
                           style={{
                             height: 28,
-                            borderWidth: 0,
-                            borderColor: "transparent",
+                            borderWidth: 2,
+                            borderColor: isActive ? "#333" : "transparent",
                             borderRadius: 6,
                             paddingBottom: 0,
                             paddingTop: 0,
@@ -245,10 +286,15 @@ export default function AddScreen() {
                           keyboardType="numeric"
                           value={inputItem.weight || ""}
                           showSoftInputOnFocus={false}
+                          contextMenuHidden={true} // Ẩn hoàn toàn menu copy/paste/select khi long-press (Chạy cực tốt trên iOS & Android)
+                          selectTextOnFocus={false}
+                          caretHidden={true}
                           onFocus={() => {
+                            // KeyboardController.dismiss({ keepFocus: true });
+                            Keyboard.dismiss();
                             setActiveColIndex(colIdx);
                             setActiveInputIndex(inputIdx);
-                            showKeyboard(); // Gọi hàm hiển thị bàn phím mượt mà
+                            showKeyboard();
                             if (inputItem.worker_id) {
                               const foundWorker = colorArray.find(
                                 (w) => w.id === inputItem.worker_id,

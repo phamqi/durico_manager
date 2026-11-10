@@ -1,5 +1,4 @@
 import { DEFAULT_WORKER_COLOR } from "@/constants";
-import { useMemo } from "react";
 import { TouchableOpacity } from "react-native";
 import { useGlobalState } from "../context";
 
@@ -10,9 +9,6 @@ export default function ButtonShowColor({ isTouch }) {
     isTouch();
   };
 
-  useMemo(() => {
-    console.log("button show color rerender");
-  }, [colorArray]);
   return (
     <TouchableOpacity
       onPress={TouchShowPalette}

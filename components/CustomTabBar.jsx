@@ -29,7 +29,6 @@ export default function CustomTabBar() {
   const insets = useSafeAreaInsets();
 
   const {
-    color,
     setColor,
     colorArray,
     addWorker,
@@ -37,11 +36,7 @@ export default function CustomTabBar() {
     removeWorker,
     createAmountContext,
     amount,
-    currentWorker,
-    setCurrentWorker,
-    columnsData,
     createTransaction,
-    getTransactionsData,
   } = useGlobalState();
   const [showPalette, setShowPalette] = useState(false);
 
@@ -58,7 +53,6 @@ export default function CustomTabBar() {
 
   const setShowPaletteFromChild = () => {
     setShowPalette((v) => !v);
-    console.log("calling from child component");
   };
   useEffect(() => {
     if (colorArray.length > 0 && !tempColor) {
