@@ -1,25 +1,15 @@
 import { router, usePathname } from "expo-router";
 import { PiggyBank, SquareCheckBig, SquarePen } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import {
-  Pressable,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Portal } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import {
-  DEFAULT_WORKER_COLOR,
-  DELETE_PIN,
-  PRESET_COLORS,
-  PRICE_COLOR,
-} from "../constants";
+import { PRESET_COLORS, PRICE_COLOR } from "../constants";
 import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
+import AddColorInput from "./AddColorInput";
 import ButtonShowColor from "./ButtonShowColor";
 import Palette from "./Palette";
 
@@ -37,16 +27,27 @@ export default function CustomTabBar() {
     createAmountContext,
     amount,
     createTransaction,
+    setCurrentWorker,
+    currentWorker,
   } = useGlobalState();
   const [showPalette, setShowPalette] = useState(false);
 
   const [tempColor, setTempColor] = useState(null);
   const [tempName, setTempName] = useState("");
   const [isPrice, setIsPrice] = useState(false);
+  const childRef = useRef(null);
 
   const getColorName = (hex) => {
     const found = colorArray.find((c) => c.color === hex);
-    return found ? found.name : "";
+    return found
+      ? setCurrentWorker(found)
+      : setCurrentWorker({
+          id: "none",
+          year: "none",
+          name: "",
+          color: "none",
+          total_weightning: 0,
+        });
   };
 
   const addColorModal = useAnchoredModalReanimated();
@@ -67,6 +68,7 @@ export default function CustomTabBar() {
       addColorModal.close();
     }
   }, [pathname]);
+  console.log("customeTabbar rerender");
   return (
     <View
       style={{
@@ -173,8 +175,7 @@ export default function CustomTabBar() {
                     onPress={() => {
                       setTempColor(c);
                       setIsPrice(false);
-                      const name = getColorName(c);
-                      setTempName(name);
+                      getColorName(c);
                     }}
                   >
                     <View
@@ -216,33 +217,12 @@ export default function CustomTabBar() {
                   <PiggyBank size={20} color={PRICE_COLOR.icon} />
                 </TouchableOpacity>
               </View>
-              <TextInput
-                placeholder={
-                  tempName
-                    ? undefined
-                    : isPrice
-                      ? "Nhập giá tiền"
-                      : "Nhập tên cho màu này"
-                }
-                placeholderTextColor="rgba(0,0,0,0.4)"
-                value={tempName}
-                keyboardType={isPrice ? "numeric" : "default"}
-                onChangeText={setTempName}
-                autoCapitalize="none"
-                autoCorrect={false}
-                spellCheck={false}
-                textContentType="none"
-                autoComplete="off"
-                importantForAutofill="no"
-                editable={tempColor === DEFAULT_WORKER_COLOR ? false : true}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 8,
-                  paddingHorizontal: 10,
-                  height: 40,
-                  fontSize: 14,
-                }}
+              <AddColorInput
+                ref={childRef}
+                isPrice={isPrice}
+                currentWorker={currentWorker}
+                amount={amount}
+                onDelete={() => removeWorker(currentWorker.id)}
               />
               <View
                 style={{
@@ -253,36 +233,23 @@ export default function CustomTabBar() {
               >
                 <TouchableOpacity
                   onPress={() => {
-                    const existed = colorArray.find(
-                      (c) => c.color === tempColor,
-                    );
-                    if (tempName === DELETE_PIN) {
-                      removeWorker(existed.id);
-                      setTempName("");
-                      setColor(colorArray[0]);
-                    } else {
-                      addColorModal.close();
-                    }
+                    addColorModal.close();
                   }}
                 >
-                  <Text
-                    style={{ color: tempName === DELETE_PIN ? "red" : "black" }}
-                  >
-                    {tempName === DELETE_PIN ? "Xóa" : "Huỷ"}
-                  </Text>
+                  <Text>Huỷ</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    const existed = colorArray.find(
-                      (c) => c.color === tempColor,
-                    );
                     if (isPrice) {
-                      createAmountContext(tempName);
+                      createAmountContext(childRef?.current.getValue());
                     } else {
-                      if (!existed) {
-                        addWorker(tempName, tempColor, 0);
+                      if (currentWorker.name == "") {
+                        addWorker(childRef?.current.getValue(), tempColor, 0);
                       } else {
-                        updateWorker(existed.id, tempName);
+                        updateWorker(
+                          currentWorker?.id,
+                          childRef?.current.getValue(),
+                        );
                       }
                     }
                   }}
