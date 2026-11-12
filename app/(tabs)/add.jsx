@@ -1,15 +1,15 @@
 import { CustomKeypadAdvanced } from "@/components";
+import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { useDuricoAlert, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Keyboard, ScrollView, Text, View } from "react-native";
+import { Keyboard, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { InputItemCard } from "../../components";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
@@ -239,16 +239,42 @@ export default function AddScreen() {
                         isKeyboardVisible &&
                         activeColIndex === colIdx &&
                         activeInputIndex === inputIdx;
+                      const key = `${colIdx}-${inputIdx}`;
 
                       return (
-                        <InputItemCard
-                          key={inputItem.id || inputIdx}
-                          colIdx={colIdx}
-                          inputIdx={inputIdx}
-                          inputItem={inputItem}
-                          isActive={isActive}
-                          inputRefs={inputRefs}
-                          onFocusInput={handleInputFocus}
+                        <TextInput
+                          ref={(el) => (inputRefs.current[key] = el)}
+                          style={{
+                            height: 28,
+                            borderWidth: 2,
+                            borderColor: isActive ? "#333" : "transparent",
+                            borderRadius: 6,
+                            paddingBottom: 0,
+                            paddingTop: 0,
+                            paddingLeft: 10,
+                            textAlignVertical: "center",
+                            marginBottom: 4,
+                            fontSize: 16,
+                            backgroundColor: inputItem.weight
+                              ? inputItem.worker_color === DEFAULT_WORKER_COLOR
+                                ? "#fff"
+                                : inputItem.worker_color
+                              : "#fff",
+                            color: "#333333",
+                            fontWeight: "600",
+                          }}
+                          key={key}
+                          placeholder={`Ô ${inputIdx + 1}`}
+                          placeholderTextColor="#aaa"
+                          keyboardType="numeric"
+                          value={inputItem.weight || ""}
+                          showSoftInputOnFocus={false}
+                          contextMenuHidden={true}
+                          selectTextOnFocus={false}
+                          caretHidden={true}
+                          onFocus={() =>
+                            handleInputFocus(colIdx, inputIdx, inputItem)
+                          }
                         />
                       );
                     })}

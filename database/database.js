@@ -4,11 +4,11 @@ let db = null;
 
 export const initDB = async () => {
   db = await SQLite.openDatabaseAsync("durico_app.db");
-  await db.execAsync(`
-    DROP TABLE IF EXISTS transaction_details;
-    DROP TABLE IF EXISTS transactions;
-   
-  `);
+  // await db.execAsync(`
+  //   DROP TABLE IF EXISTS transaction_details;
+  //   DROP TABLE IF EXISTS transactions;
+
+  // `);
   // DROP TABLE IF EXISTS worker;
   // DROP TABLE IF EXISTS amount;
   await db.execAsync(`
