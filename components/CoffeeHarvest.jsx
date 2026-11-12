@@ -1,14 +1,16 @@
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router"; // 👈 Thêm useRouter
+import { MoveRight } from "lucide-react-native";
 import { useCallback, useState } from "react";
-import { RefreshControl, Text, View } from "react-native";
+import { RefreshControl, Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { useGlobalState } from "../context";
 import TransactionCard from "./TransactionCard";
 
 export default function CoffeeHarvest({ scrollY }) {
   const { getTransactions } = useGlobalState();
+  const router = useRouter(); // 👈 Khởi tạo router để điều hướng
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // 1. Thêm state quản lý trạng thái pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false);
   const [transactionArray, setTransactionsArray] = useState([]);
 
   useFocusEffect(
@@ -19,7 +21,7 @@ export default function CoffeeHarvest({ scrollY }) {
       (async () => {
         const rows = await getTransactions(0);
         if (isMounted) {
-          setTransactionsArray(rows);
+          setTransactionsArray(Array.isArray(rows) ? rows : []);
           setLoading(false);
         }
       })();
@@ -30,12 +32,11 @@ export default function CoffeeHarvest({ scrollY }) {
     }, [getTransactions]),
   );
 
-  // 2. Hàm xử lý khi người dùng kéo xuống để refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       const rows = await getTransactions(0);
-      setTransactionsArray(rows);
+      setTransactionsArray(Array.isArray(rows) ? rows : []);
     } catch (error) {
       console.error("Failed to refresh transactions:", error);
     } finally {
@@ -56,15 +57,15 @@ export default function CoffeeHarvest({ scrollY }) {
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        bounces={true} // 👈 Bắt buộc có để iOS cho phép kéo âm (over-scroll)
+        bounces={true}
         overScrollMode="always"
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingBottom: 250,
           paddingTop: 10,
+          flexGrow: 1, // 👈 Giúp căn giữa theo chiều dọc khi màn hình trống
         }}
         showsVerticalScrollIndicator={false}
-        // 3. Gắn RefreshControl vào Animated.ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -80,8 +81,9 @@ export default function CoffeeHarvest({ scrollY }) {
           >
             <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
           </View>
-        ) : (
-          transactionArray?.map((item, index) => (
+        ) : transactionArray.length > 0 ? (
+          // Trường hợp có dữ liệu: Hiển thị danh sách card
+          transactionArray.map((item, index) => (
             <TransactionCard
               key={item.id}
               item={item}
@@ -89,6 +91,58 @@ export default function CoffeeHarvest({ scrollY }) {
               scrollY={scrollY}
             />
           ))
+        ) : (
+          // Trường hợp KHÔNG có giao dịch nào (Mảng rỗng)
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 60,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#333",
+                textAlign: "center",
+                marginBottom: 6,
+              }}
+            >
+              Chưa có giao dịch nào
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#666",
+                textAlign: "center",
+                marginBottom: 20,
+              }}
+            >
+              Bắt đầu ngay
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => router.push("/add")}
+              style={{
+                backgroundColor: "transparent",
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: "600",
+                }}
+              >
+                <MoveRight />
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </Animated.ScrollView>
     </View>

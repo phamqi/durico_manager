@@ -2,7 +2,6 @@ import { DEFAULT_WORKER_COLOR } from "@/constants";
 import React from "react";
 import { TextInput } from "react-native";
 
-// Dùng React.memo để ngăn component re-render nếu props của nó không thay đổi
 const InputItemCard = React.memo(
   ({ colIdx, inputIdx, inputItem, isActive, inputRefs, onFocusInput }) => {
     const key = `${colIdx}-${inputIdx}`;
@@ -21,10 +20,11 @@ const InputItemCard = React.memo(
           textAlignVertical: "center",
           marginBottom: 4,
           fontSize: 16,
-          backgroundColor:
-            inputItem.worker_color === DEFAULT_WORKER_COLOR
+          backgroundColor: inputItem.weight
+            ? inputItem.worker_color === DEFAULT_WORKER_COLOR
               ? "#fff"
-              : inputItem.worker_color || "#fff",
+              : inputItem.worker_color
+            : "#fff",
           color: "#333333",
           fontWeight: "600",
         }}

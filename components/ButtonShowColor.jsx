@@ -4,7 +4,7 @@ import { TouchableOpacity } from "react-native";
 import { useGlobalState } from "../context";
 
 export default function ButtonShowColor({ isTouch }) {
-  const { colorArray, currentWorker } = useGlobalState();
+  const { currentWorker } = useGlobalState();
 
   const TouchShowPalette = () => {
     isTouch();

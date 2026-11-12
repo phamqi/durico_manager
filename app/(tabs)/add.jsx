@@ -363,6 +363,7 @@ export default function AddScreen() {
             onNextInput={handleNextInput}
             onHideKeyboard={hideKeyboard}
             currentWorkerId={currentWorker?.id}
+            isAdColumn={addColumn}
           />
         </Animated.View>
       )}

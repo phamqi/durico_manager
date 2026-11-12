@@ -24,6 +24,7 @@ export default function CustomKeypadAdvanced({
   onPrevInput,
   onNextInput,
   onHideKeyboard,
+  isAdColumn,
 }) {
   const { selectedType, setSelectedType, handleReset, addColumn } =
     useGlobalState();
@@ -350,7 +351,7 @@ export default function CustomKeypadAdvanced({
               alignItems: "center",
               borderRadius: 6,
             }}
-            onPress={addColumn}
+            onPress={isAdColumn}
           >
             <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
               <Plus size={24} />

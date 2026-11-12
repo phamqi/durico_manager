@@ -128,11 +128,9 @@ export default function DetailsScreen() {
         setColumnsData(formattedColumns);
       }
     }
-
     fetchDetails();
-  }, [id, getTransactionsDetails]);
+  }, [id]);
 
-  // Tạo một Ref để lưu trữ danh sách các ô TextInput nhằm điều khiển focus thủ công
   const inputRefs = useRef({});
 
   const focusInput = (colIdx, inputIdx) => {
@@ -220,7 +218,32 @@ export default function DetailsScreen() {
       focusInput(activeColIndex + 1, 0);
     }
   };
+  const addColumn = () => {
+    // Tìm ID lớn nhất hiện tại để tạo ID tiếp theo, nếu mảng trống thì bắt đầu từ 1
+    const nextColId =
+      columnsData.length > 0
+        ? Math.max(...columnsData.map((c) => Number(c.id) || 0)) + 1
+        : 1;
 
+    // Tạo sẵn 5 ô input trống cho cụm mới
+    const newInputs = Array.from({ length: 5 }, (_, inputIdx) => ({
+      id: null,
+      weight: "",
+      row_index: inputIdx + 1,
+      worker_id: null,
+      worker_name: null,
+      worker_color: null,
+    }));
+
+    const newColumn = {
+      id: nextColId,
+      inputs: newInputs,
+      result: "0",
+    };
+
+    // Cập nhật state để thêm cột mới vào cuối danh sách
+    setColumnsData([...columnsData, newColumn]);
+  };
   const cardStyle = {
     width: "48%",
     height: 248,
@@ -294,14 +317,13 @@ export default function DetailsScreen() {
                         activeInputIndex === inputIdx;
                       return (
                         <InputItemCard
-                          key={inputItem.id || inputIdx}
+                          key={key}
                           colIdx={colIdx}
                           inputIdx={inputIdx}
                           inputItem={inputItem}
                           isActive={isActive}
                           inputRefs={inputRefs}
                           onFocusInput={(cIdx, iIdx, itemData) => {
-                            console.log("pathname", pathname);
                             Keyboard.dismiss();
                             setActiveColIndex(cIdx);
                             setActiveInputIndex(iIdx);
@@ -431,6 +453,7 @@ export default function DetailsScreen() {
             onNextInput={handleNextInput}
             onHideKeyboard={hideKeyboard}
             currentWorkerId={currentWorker?.id}
+            isAdColumn={addColumn}
           />
         </Animated.View>
       )}
