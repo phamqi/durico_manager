@@ -15,7 +15,6 @@ import {
 
 import { DEFAULT_WORKER, DELETE_PIN } from "../constants";
 
-// Tạo Animated Component cho TextInput
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
 const AddColorInput = forwardRef(
@@ -34,12 +33,11 @@ const AddColorInput = forwardRef(
     useEffect(() => {
       Animated.timing(animValue, {
         toValue: isDeleteMode ? 1 : 0,
-        duration: 250,
+        duration: 280,
         useNativeDriver: false, // Bắt buộc false vì animate width %
       }).start();
     }, [isDeleteMode]);
 
-    // Interpolate chiều rộng của TextInput từ "100%" xuống "75%"
     const inputWidth = animValue.interpolate({
       inputRange: [0, 1],
       outputRange: ["100%", "73%"],
@@ -48,7 +46,7 @@ const AddColorInput = forwardRef(
     const buttonOpacity = animValue;
     const buttonScale = animValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [0.8, 1],
+      outputRange: [0.5, 1],
     });
     const handleDelete = async () => {
       await onDelete();

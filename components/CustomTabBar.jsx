@@ -15,7 +15,12 @@ import Palette from "./Palette";
 
 export default function CustomTabBar() {
   const pathname = usePathname();
-  const isAddScreen = pathname === "/add";
+
+  // 👉 1. Cập nhật điều kiện kiểm tra màn hình Add / Details
+  // Kiểm tra nếu pathname chứa chữ "add" hoặc "details" (hoặc điều chỉnh theo đúng path thực tế của bạn)
+  const isAddOrDetailScreen =
+    pathname.includes("add") || pathname.includes("details");
+
   const insets = useSafeAreaInsets();
 
   const {
@@ -68,7 +73,7 @@ export default function CustomTabBar() {
       addColorModal.close();
     }
   }, [pathname]);
-  console.log("customeTabbar rerender");
+
   return (
     <View
       style={{
@@ -83,7 +88,8 @@ export default function CustomTabBar() {
         paddingHorizontal: 28,
       }}
     >
-      {isAddScreen ? (
+      {/* 👉 2. Chỉ hiển thị nút chọn màu khi ĐANG ở màn hình Add hoặc Details */}
+      {isAddOrDetailScreen ? (
         <View style={{ position: "relative" }}>
           <ButtonShowColor isTouch={setShowPaletteFromChild} />
 
@@ -97,18 +103,24 @@ export default function CustomTabBar() {
       ) : (
         <View style={{ width: 28 }} />
       )}
+
       <TouchableOpacity
         hitSlop={10}
         onPress={() => {
-          if (isAddScreen) {
-            createTransaction();
+          if (!isAddOrDetailScreen) {
+            router.push("/add"); // Hoặc điều hướng sang trang add
           } else {
-            router.push("/add");
+            createTransaction(); // Hoặc hành động lưu/tạo transaction
           }
         }}
         style={{ marginLeft: "auto" }}
       >
-        {isAddScreen ? <SquareCheckBig size={28} /> : <SquarePen size={28} />}
+        {/* 👉 3. Thay đổi icon tương ứng với màn hình */}
+        {!isAddOrDetailScreen ? (
+          <SquarePen size={28} />
+        ) : (
+          <SquareCheckBig size={28} />
+        )}
       </TouchableOpacity>
 
       {addColorModal.visible && (
@@ -207,7 +219,6 @@ export default function CustomTabBar() {
                     backgroundColor: isPrice
                       ? PRICE_COLOR.active
                       : PRICE_COLOR.blur,
-                    borderWidth: 1,
                     borderWidth: isPrice ? 2 : 1,
                     borderColor: isPrice ? "#000" : "#ccc",
                     alignItems: "center",

@@ -1,6 +1,6 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { RefreshControl, Text, View } from "react-native";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { useGlobalState } from "../context";
 import TransactionCard from "./TransactionCard";
@@ -8,7 +8,9 @@ import TransactionCard from "./TransactionCard";
 export default function CoffeeHarvest({ scrollY }) {
   const { getTransactions } = useGlobalState();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // 1. Thêm state quản lý trạng thái pull-to-refresh
   const [transactionArray, setTransactionsArray] = useState([]);
+
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
@@ -27,6 +29,20 @@ export default function CoffeeHarvest({ scrollY }) {
       };
     }, [getTransactions]),
   );
+
+  // 2. Hàm xử lý khi người dùng kéo xuống để refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const rows = await getTransactions(0);
+      setTransactionsArray(rows);
+    } catch (error) {
+      console.error("Failed to refresh transactions:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [getTransactions]);
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       if (scrollY) {
@@ -40,16 +56,27 @@ export default function CoffeeHarvest({ scrollY }) {
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        bounces={true} // 👈 Bắt buộc có để iOS cho phép kéo âm (over-scroll)
+        overScrollMode="always"
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingBottom: 250,
           paddingTop: 10,
         }}
         showsVerticalScrollIndicator={false}
+        // 3. Gắn RefreshControl vào Animated.ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {loading ? (
           <View
-            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 40,
+            }}
           >
             <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
           </View>

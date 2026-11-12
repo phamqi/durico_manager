@@ -1,15 +1,15 @@
 import { CustomKeypadAdvanced } from "@/components";
-import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { useDuricoAlert, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Keyboard, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Keyboard, ScrollView, Text, View } from "react-native";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { InputItemCard } from "../../components";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
@@ -23,6 +23,7 @@ export default function AddScreen() {
     setCurrentWorker,
     totalSummary,
   } = useGlobalState();
+
   const alert = useDuricoAlert();
   const typeModal = useAnchoredModalReanimated();
   const animatedStyle = useAddScreenEnterAnimation();
@@ -31,18 +32,13 @@ export default function AddScreen() {
   const [activeInputIndex, setActiveInputIndex] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  // Shared value cho animation bàn phím (bắt đầu ở 300 tức là nằm ẩn bên dưới)
   const translateY = useSharedValue(300);
 
-  // Hàm mở bàn phím mượt mà
   const showKeyboard = () => {
     setIsKeyboardVisible(true);
     translateY.value = withTiming(0, { duration: 200 });
   };
 
-  // Hàm ẩn bàn phím mượt mà rồi mới unmount component
-
-  // Style animation chạy trên UI thread (cực kỳ mượt, không giật lag)
   const animatedKeyboardStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
@@ -58,7 +54,6 @@ export default function AddScreen() {
     }
   }, [pathname]);
 
-  // Tạo một Ref để lưu trữ danh sách các ô TextInput nhằm điều khiển focus thủ công
   const inputRefs = useRef({});
 
   useEffect(() => {
@@ -69,15 +64,33 @@ export default function AddScreen() {
     }
   }, [columnsData]);
 
-  // Hàm hỗ trợ focus vào ô TextInput tương ứng khi dùng nút < và >
-  const focusInput = (colIdx, inputIdx) => {
+  const focusInput = useCallback((colIdx, inputIdx) => {
     setActiveColIndex(colIdx);
     setActiveInputIndex(inputIdx);
     const key = `${colIdx}-${inputIdx}`;
     if (inputRefs.current[key]) {
       inputRefs.current[key].focus();
     }
-  };
+  }, []);
+
+  const handleInputFocus = useCallback(
+    (colIdx, inputIdx, inputItem) => {
+      Keyboard.dismiss();
+      setActiveColIndex(colIdx);
+      setActiveInputIndex(inputIdx);
+      showKeyboard();
+      if (inputItem.worker_id) {
+        const foundWorker = colorArray.find(
+          (w) => w.id === inputItem.worker_id,
+        );
+        if (foundWorker) {
+          setCurrentWorker(foundWorker);
+        }
+      }
+    },
+    [colorArray, setCurrentWorker],
+  );
+
   const hideKeyboard = () => {
     const key = `${activeColIndex}-${activeInputIndex}`;
     if (inputRefs.current[key]) {
@@ -89,6 +102,7 @@ export default function AddScreen() {
       }
     });
   };
+
   const updateWeightValue = (newValue) => {
     if (!columnsData || columnsData.length === 0) return;
     const updatedData = [...columnsData];
@@ -169,6 +183,8 @@ export default function AddScreen() {
     shadowRadius: 2,
     marginBottom: 10,
   };
+
+  console.log("addScreen rerender");
   return (
     <View style={{ flex: 1 }}>
       <Animated.View
@@ -219,55 +235,20 @@ export default function AddScreen() {
 
                   {item.inputs &&
                     item.inputs.map((inputItem, inputIdx) => {
-                      const key = `${colIdx}-${inputIdx}`;
                       const isActive =
                         isKeyboardVisible &&
                         activeColIndex === colIdx &&
                         activeInputIndex === inputIdx;
+
                       return (
-                        <TextInput
-                          key={inputIdx}
-                          ref={(el) => (inputRefs.current[key] = el)}
-                          style={{
-                            height: 28,
-                            borderWidth: 2,
-                            borderColor: isActive ? "#333" : "transparent",
-                            borderRadius: 6,
-                            paddingBottom: 0,
-                            paddingTop: 0,
-                            paddingLeft: 10,
-                            textAlignVertical: "center",
-                            marginBottom: 4,
-                            fontSize: 16,
-                            backgroundColor:
-                              inputItem.worker_color === DEFAULT_WORKER_COLOR
-                                ? "#fff"
-                                : inputItem.worker_color || "#fff",
-                            color: "#333333",
-                            fontWeight: "600",
-                          }}
-                          placeholder={`Ô ${inputIdx + 1}`}
-                          placeholderTextColor="#aaa"
-                          keyboardType="numeric"
-                          value={inputItem.weight || ""}
-                          showSoftInputOnFocus={false}
-                          contextMenuHidden={true}
-                          selectTextOnFocus={false}
-                          caretHidden={true}
-                          onFocus={() => {
-                            Keyboard.dismiss();
-                            setActiveColIndex(colIdx);
-                            setActiveInputIndex(inputIdx);
-                            showKeyboard();
-                            if (inputItem.worker_id) {
-                              const foundWorker = colorArray.find(
-                                (w) => w.id === inputItem.worker_id,
-                              );
-                              if (foundWorker) {
-                                setCurrentWorker(foundWorker);
-                              }
-                            }
-                          }}
+                        <InputItemCard
+                          key={inputItem.id || inputIdx}
+                          colIdx={colIdx}
+                          inputIdx={inputIdx}
+                          inputItem={inputItem}
+                          isActive={isActive}
+                          inputRefs={inputRefs}
+                          onFocusInput={handleInputFocus}
                         />
                       );
                     })}
@@ -361,8 +342,6 @@ export default function AddScreen() {
           </View>
         </ScrollView>
       </Animated.View>
-
-      {/* BÀN PHÍM CUSTOM DÙNG REANIMATED (MƯỢT VÀ KHÔNG CHẶN CHẠM) */}
       {isKeyboardVisible && (
         <Animated.View
           style={[

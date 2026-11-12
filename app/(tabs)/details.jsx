@@ -1,14 +1,17 @@
-import { DEFAULT_WORKER_COLOR } from "@/constants";
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
-import { useGlobalState } from "../../context";
-
-const TYPE_LABELS = {
-  0: "Thu nhập",
-  1: "Ca phe",
-  2: "Sau rieng",
-};
+import { CustomKeypadAdvanced } from "@/components";
+import { useDuricoAlert, useGlobalState } from "@/context";
+import { useLocalSearchParams, usePathname } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Keyboard, ScrollView, Text, View } from "react-native";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { InputItemCard } from "../../components";
+import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
+import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
 export default function DetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -17,10 +20,44 @@ export default function DetailsScreen() {
     colorArray,
     currentWorker,
     setCurrentWorker,
+    totalSummary,
   } = useGlobalState();
+
+  const alert = useDuricoAlert();
+  const typeModal = useAnchoredModalReanimated();
+  const animatedStyle = useAddScreenEnterAnimation();
+
   const [columnsData, setColumnsData] = useState([]);
   const [transactionType, setTransactionType] = useState(0);
 
+  const [activeColIndex, setActiveColIndex] = useState(0);
+  const [activeInputIndex, setActiveInputIndex] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Shared value cho animation bàn phím
+  const translateY = useSharedValue(300);
+
+  const showKeyboard = () => {
+    setIsKeyboardVisible(true);
+    translateY.value = withTiming(0, { duration: 200 });
+  };
+
+  const animatedKeyboardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeModal?.visible) {
+      typeModal.close();
+    }
+    if (isKeyboardVisible == true) {
+      hideKeyboard();
+    }
+  }, [pathname]);
+
+  // Fetch dữ liệu chi tiết theo id của transaction
   useEffect(() => {
     async function fetchDetails() {
       if (id) {
@@ -48,16 +85,13 @@ export default function DetailsScreen() {
         const formattedColumns = Object.keys(rawGrouped).map((colIndex) => {
           const colRows = rawGrouped[colIndex];
 
-          // Tạo sẵn 5 ô mặc định
           const inputs = Array.from({ length: 5 }, (_, inputIdx) => {
             const rowIndex = inputIdx + 1;
-            // Tìm bản ghi tương ứng với row_index này trong DB
             const matchedRow = colRows.find((r) => r.row_index === rowIndex);
 
             if (matchedRow) {
               return {
                 id: matchedRow.id,
-                // Hiển thị cả 0 dưới dạng chuỗi "0"
                 weight:
                   matchedRow.weight !== null && matchedRow.weight !== undefined
                     ? String(matchedRow.weight)
@@ -79,7 +113,6 @@ export default function DetailsScreen() {
             };
           });
 
-          // Lấy result của cột (hoặc tự tính lại)
           const resultSum = inputs.reduce(
             (sum, item) => sum + (parseFloat(item.weight) || 0),
             0,
@@ -97,31 +130,95 @@ export default function DetailsScreen() {
     }
 
     fetchDetails();
-  }, [id]);
+  }, [id, getTransactionsDetails]);
 
-  const handleInputChange = (text, colIndex, inputIndex) => {
+  // Tạo một Ref để lưu trữ danh sách các ô TextInput nhằm điều khiển focus thủ công
+  const inputRefs = useRef({});
+
+  const focusInput = (colIdx, inputIdx) => {
+    setActiveColIndex(colIdx);
+    setActiveInputIndex(inputIdx);
+    const key = `${colIdx}-${inputIdx}`;
+    if (inputRefs.current[key]) {
+      inputRefs.current[key].focus();
+    }
+  };
+
+  const hideKeyboard = () => {
+    const key = `${activeColIndex}-${activeInputIndex}`;
+    if (inputRefs.current[key]) {
+      inputRefs.current[key].blur();
+    }
+    translateY.value = withTiming(300, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(setIsKeyboardVisible)(false);
+      }
+    });
+  };
+
+  const updateWeightValue = (newValue) => {
+    if (!columnsData || columnsData.length === 0) return;
     const updatedData = [...columnsData];
-    updatedData[colIndex].inputs[inputIndex] = {
-      ...updatedData[colIndex].inputs[inputIndex],
-      weight: text,
-      worker_id: currentWorker
-        ? currentWorker.id
-        : updatedData[colIndex].inputs[inputIndex].worker_id,
-      worker_name: currentWorker
-        ? currentWorker.name
-        : updatedData[colIndex].inputs[inputIndex].worker_name,
-      worker_color: currentWorker
-        ? currentWorker.color
-        : updatedData[colIndex].inputs[inputIndex].worker_color,
+
+    if (!updatedData[activeColIndex]) {
+      setActiveColIndex(0);
+      return;
+    }
+
+    if (!updatedData[activeColIndex].inputs[activeInputIndex]) {
+      setActiveInputIndex(0);
+    }
+
+    updatedData[activeColIndex].inputs[activeInputIndex] = {
+      ...updatedData[activeColIndex].inputs[activeInputIndex],
+      weight: newValue,
+      worker_id: currentWorker ? currentWorker.id : null,
+      worker_name: currentWorker ? currentWorker.name : null,
+      worker_color: currentWorker ? currentWorker.color : null,
     };
 
-    const sum = updatedData[colIndex].inputs.reduce(
-      (acc, item) => acc + (parseFloat(item.weight) || 0),
+    const sum = updatedData[activeColIndex].inputs.reduce(
+      (acc, item) => acc + (Number(item.weight) || 0),
       0,
     );
-    updatedData[colIndex].result = String(sum);
-
+    updatedData[activeColIndex].result = sum.toString();
     setColumnsData(updatedData);
+  };
+
+  const handleKeyPress = (num) => {
+    if (!columnsData || !columnsData[activeColIndex]) return;
+    const currentVal =
+      columnsData[activeColIndex].inputs[activeInputIndex]?.weight || "";
+    updateWeightValue(currentVal + num);
+  };
+
+  const handleDelete = () => {
+    if (!columnsData || !columnsData[activeColIndex]) return;
+    const currentVal =
+      columnsData[activeColIndex].inputs[activeInputIndex]?.weight || "";
+    if (currentVal.length > 0) {
+      updateWeightValue(currentVal.slice(0, -1));
+    }
+  };
+
+  const handlePrevInput = () => {
+    if (activeInputIndex > 0) {
+      focusInput(activeColIndex, activeInputIndex - 1);
+    } else if (activeColIndex > 0) {
+      const prevColIndex = activeColIndex - 1;
+      const lastInputIdx = columnsData[prevColIndex].inputs.length - 1;
+      focusInput(prevColIndex, lastInputIdx);
+    }
+  };
+
+  const handleNextInput = () => {
+    if (!columnsData || !columnsData[activeColIndex]) return;
+    const currentInputs = columnsData[activeColIndex].inputs || [];
+    if (activeInputIndex < currentInputs.length - 1) {
+      focusInput(activeColIndex, activeInputIndex + 1);
+    } else if (activeColIndex < columnsData.length - 1) {
+      focusInput(activeColIndex + 1, 0);
+    }
   };
 
   const cardStyle = {
@@ -138,30 +235,24 @@ export default function DetailsScreen() {
     shadowOpacity: 0.1,
     shadowRadius: 2,
     marginBottom: 10,
-    justifyContent: "space-between",
   };
 
-  const currentTypeLabel = TYPE_LABELS[transactionType] || "Thu nhập";
-
-  const totalSummary = columnsData.reduce(
-    (acc, col) => acc + (parseFloat(col.result) || 0),
-    0,
-  );
-
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#fff",
-          paddingTop: 20,
-          paddingHorizontal: 20,
-        }}
+    <View style={{ flex: 1 }}>
+      <Animated.View
+        style={[
+          {
+            flex: 1,
+            backgroundColor: "#fff",
+            paddingTop: 50,
+            paddingHorizontal: 20,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          },
+          animatedStyle,
+        ]}
       >
-        <Text style={{ fontSize: 18, marginBottom: 10, fontWeight: "bold" }}>
-          Chi tiết giao dịch ID: {id}
-        </Text>
-
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>Chi tiết lịch sử</Text>
         <ScrollView
           style={{
             flex: 1,
@@ -170,7 +261,7 @@ export default function DetailsScreen() {
             paddingTop: 20,
             borderRadius: 8,
           }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 260 }}
         >
           <View
             style={{
@@ -179,9 +270,9 @@ export default function DetailsScreen() {
               justifyContent: "space-between",
             }}
           >
-            {columnsData.map((item, index) => (
-              <View key={item.id || index} style={cardStyle}>
-                <View>
+            {columnsData && columnsData.length > 0 ? (
+              columnsData.map((item, colIdx) => (
+                <View key={item.id || colIdx} style={cardStyle}>
                   <Text
                     style={{
                       fontSize: 14,
@@ -191,87 +282,83 @@ export default function DetailsScreen() {
                       textAlign: "center",
                     }}
                   >
-                    Cụm #{index + 1}
+                    Cụm #{colIdx + 1}
                   </Text>
 
-                  {item.inputs.map((inputItem, inputIdx) => (
-                    <TextInput
-                      key={inputIdx}
+                  {item.inputs &&
+                    item.inputs.map((inputItem, inputIdx) => {
+                      const key = `${colIdx}-${inputIdx}`;
+                      const isActive =
+                        isKeyboardVisible &&
+                        activeColIndex === colIdx &&
+                        activeInputIndex === inputIdx;
+                      return (
+                        <InputItemCard
+                          key={inputItem.id || inputIdx}
+                          colIdx={colIdx}
+                          inputIdx={inputIdx}
+                          inputItem={inputItem}
+                          isActive={isActive}
+                          inputRefs={inputRefs}
+                          onFocusInput={(cIdx, iIdx, itemData) => {
+                            console.log("pathname", pathname);
+                            Keyboard.dismiss();
+                            setActiveColIndex(cIdx);
+                            setActiveInputIndex(iIdx);
+                            showKeyboard();
+                            if (itemData.worker_id) {
+                              const foundWorker = colorArray.find(
+                                (w) => w.id === itemData.worker_id,
+                              );
+                              if (foundWorker) {
+                                setCurrentWorker(foundWorker);
+                              }
+                            }
+                          }}
+                        />
+                      );
+                    })}
+
+                  <View
+                    style={{
+                      marginTop: 4,
+                      padding: 6,
+                      backgroundColor: "#e6f4ea",
+                      borderRadius: 6,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
                       style={{
-                        height: 28,
-                        borderWidth: 0,
-                        borderRadius: 6,
-                        paddingBottom: 0,
-                        paddingTop: 0,
-                        paddingLeft: 10,
-                        textAlignVertical: "center",
-                        marginBottom: 4,
-                        fontSize: 16,
-                        backgroundColor:
-                          !inputItem.worker_color ||
-                          inputItem.worker_color === DEFAULT_WORKER_COLOR
-                            ? "#fff"
-                            : inputItem.worker_color,
-                        color: "#333333",
+                        fontSize: 14,
+                        color: "#137333",
                         fontWeight: "600",
                       }}
-                      placeholder={`Ô ${inputIdx + 1}`}
-                      placeholderTextColor="#aaa"
-                      keyboardType="numeric"
-                      value={inputItem.weight}
-                      onChangeText={(text) =>
-                        handleInputChange(text, index, inputIdx)
-                      }
-                      onFocus={() => {
-                        if (inputItem.worker_id && colorArray) {
-                          const foundWorker = colorArray.find(
-                            (w) => w.id === inputItem.worker_id,
-                          );
-                          if (foundWorker) {
-                            setCurrentWorker(foundWorker);
-                          }
-                        }
+                    >
+                      Kết quả:
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "bold",
+                        color: "#137333",
                       }}
-                    />
-                  ))}
+                    >
+                      {item.result || "0"}
+                    </Text>
+                  </View>
                 </View>
+              ))
+            ) : (
+              <Text style={{ textAlign: "center", width: "100%", padding: 20 }}>
+                Đang tải dữ liệu chi tiết...
+              </Text>
+            )}
 
-                {/* Kết quả từng cụm */}
-                <View
-                  style={{
-                    marginTop: 4,
-                    padding: 6,
-                    backgroundColor: "#e6f4ea",
-                    borderRadius: 6,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: "#137333",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Kết quả:
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "bold",
-                      color: "#137333",
-                    }}
-                  >
-                    {item.result}
-                  </Text>
-                </View>
-              </View>
-            ))}
-
-            {/* Ô Tổng kết chung */}
-            <View style={cardStyle}>
+            {/* Ô TỔNG KẾT CHUNG */}
+            <View style={[cardStyle, { justifyContent: "space-between" }]}>
               <View>
                 <Text
                   style={{
@@ -284,32 +371,6 @@ export default function DetailsScreen() {
                 >
                   Tổng kết chung
                 </Text>
-
-                <View style={{ marginBottom: 8 }}>
-                  <View
-                    style={{
-                      backgroundColor: "#f8f9fa",
-                      padding: 8,
-                      borderRadius: 6,
-                      borderWidth: 1,
-                      borderColor: "#007AFF",
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#333",
-                        fontWeight: "bold",
-                        fontSize: 13,
-                      }}
-                    >
-                      {currentTypeLabel}
-                    </Text>
-                  </View>
-                </View>
               </View>
 
               <View>
@@ -339,14 +400,40 @@ export default function DetailsScreen() {
                       color: "#137333",
                     }}
                   >
-                    {totalSummary}
+                    {totalSummary || "0"}
                   </Text>
                 </View>
               </View>
             </View>
           </View>
         </ScrollView>
-      </View>
+      </Animated.View>
+
+      {/* BÀN PHÍM CUSTOM */}
+      {isKeyboardVisible && (
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 999,
+            },
+            animatedKeyboardStyle,
+          ]}
+          pointerEvents="box-none"
+        >
+          <CustomKeypadAdvanced
+            onKeyPress={handleKeyPress}
+            onDelete={handleDelete}
+            onPrevInput={handlePrevInput}
+            onNextInput={handleNextInput}
+            onHideKeyboard={hideKeyboard}
+            currentWorkerId={currentWorker?.id}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 }
