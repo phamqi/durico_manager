@@ -1,7 +1,8 @@
 import { CustomKeypadAdvanced } from "@/components";
 import { DEFAULT_WORKER_COLOR } from "@/constants";
 import { useGlobalState } from "@/context";
-import { memo, useCallback, useRef, useState } from "react";
+import { usePathname } from "expo-router";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Keyboard, Text, TextInput, View } from "react-native";
 import {
   useAnimatedStyle,
@@ -32,12 +33,16 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
   const [activeInputIndex, setActiveInputIndex] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
+  const lastWorkerIdRef = useRef(null);
+
   const translateY = useSharedValue(300);
   const inputRefs = useRef({});
 
   const showKeyboard = () => {
-    setIsKeyboardVisible(true);
-    translateY.value = withTiming(0, { duration: 200 });
+    if (isActiveColumn !== colIdx) {
+      setIsKeyboardVisible(true);
+      translateY.value = withTiming(0, { duration: 200 });
+    }
   };
 
   const animatedKeyboardStyle = useAnimatedStyle(() => ({
@@ -61,14 +66,25 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
       Keyboard.dismiss();
       setActiveInputIndex(inputIdx);
       showKeyboard();
-      if (inputItem.worker_id && colorArray) {
-        const foundWorker = colorArray.find(
-          (w) => w.id === inputItem.worker_id,
-        );
-        if (foundWorker) {
-          setCurrentWorker(foundWorker);
+      if (inputItem.worker_id !== lastWorkerIdRef.current) {
+        if (inputItem.worker_id && colorArray) {
+          const foundWorker = colorArray.find(
+            (w) => w.id === inputItem.worker_id,
+          );
+          if (foundWorker) {
+            setCurrentWorker(foundWorker);
+            lastWorkerIdRef.current = inputItem.worker_id;
+          }
         }
       }
+      // if (inputItem.worker_id && colorArray) {
+      //   const foundWorker = colorArray.find(
+      //     (w) => w.id === inputItem.worker_id,
+      //   );
+      //   if (foundWorker) {
+      //     setCurrentWorker(foundWorker);
+      //   }
+      // }
     },
     [colorArray, setCurrentWorker],
   );
@@ -148,7 +164,11 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
     handleAddColumn();
   };
   console.log("Column card rerender:", colIdx);
+  const pathname = usePathname();
 
+  useEffect(() => {
+    setIsKeyboardVisible(false);
+  }, [pathname]);
   return (
     <View style={{ width: "48%", marginBottom: 10 }}>
       <View style={cardStyle}>
@@ -261,7 +281,6 @@ function arePropsEqual(prevProps, nextProps) {
     prevProps.colIdx === nextProps.colIdx &&
     prevProps.isActiveColumn === nextProps.isActiveColumn &&
     prevProps.currentWorker === nextProps.currentWorker
-    // Thêm các điều kiện so sánh khác nếu có props nào hay thay đổi
   );
 }
 export default memo(ColumnCard, arePropsEqual);
