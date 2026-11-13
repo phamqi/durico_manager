@@ -8,7 +8,7 @@ import {
   RotateCcw,
   ScanText,
 } from "lucide-react-native";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Modal,
@@ -17,6 +17,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Portal } from "react-native-paper";
+import {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 export default function CustomKeypadAdvanced({
   onKeyPress,
@@ -25,9 +32,10 @@ export default function CustomKeypadAdvanced({
   onNextInput,
   onHideKeyboard,
   isAdColumn,
+  isKeyboardVisible,
+  setIsKeyboardVisible,
 }) {
-  const { selectedType, setSelectedType, handleReset, addColumn } =
-    useGlobalState();
+  const { selectedType, setSelectedType, handleReset } = useGlobalState();
   const alert = useDuricoAlert();
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [typeBtnLayout, setTypeBtnLayout] = useState(null);
@@ -50,6 +58,14 @@ export default function CustomKeypadAdvanced({
     transactionTypes.find((t) => t.value === selectedType)?.label ||
     "Chọn loại";
 
+  const handleHideKeypad = () => {
+    translateY.value = withTiming(300, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(setIsKeyboardVisible)(false);
+      }
+    });
+    onHideKeyboard();
+  };
   const handleOpenTypeModal = () => {
     if (typeBtnRef.current) {
       typeBtnRef.current.measureInWindow((x, y, width, height) => {
@@ -147,323 +163,372 @@ export default function CustomKeypadAdvanced({
       setIsConfirmingReset(false);
     }
   };
+
+  const translateY = useSharedValue(300);
   console.log("custom keypad rerender");
+  const animatedKeyboardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+  useEffect(() => {
+    if (isKeyboardVisible) {
+      translateY.value = withTiming(0, { duration: 200 });
+    }
+  }, [isKeyboardVisible]);
+
   return (
-    <View
-      style={{
-        backgroundColor: "#DFE3E6",
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        borderTopLeftRadius: 15,
-        borderTopRightRadius: 15,
-        overflow: "hidden",
-      }}
-    >
-      {/* THANH CÔNG CỤ TRÊN CÙNG */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          backgroundColor: "#DFE3E6",
-          paddingHorizontal: 40,
-          paddingVertical: 8,
-          alignItems: "center",
-        }}
+    <Portal>
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 999,
+          },
+          animatedKeyboardStyle,
+        ]}
+        pointerEvents="box-none"
       >
-        <Text style={{ fontSize: 14, fontWeight: "500", color: "#333" }}>
-          {currentSelectedLabel}
-        </Text>
-        <TouchableOpacity
-          style={{ backgroundColor: "transparent", borderRadius: 6 }}
-          onPress={handleResetPress}
-        >
-          <RotateCcw
-            size={24}
-            style={{
-              color: "#FF3B30",
-              opacity: isConfirmingReset ? 1 : 0.7,
-            }}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* KHU VỰC BÀN PHÍM */}
-      <View style={{ flexDirection: "row", height: 230, padding: 6 }}>
-        {/* KHỐI TRÁI: Bàn phím số (3 cột) */}
         <View
-          style={{ flex: 3, justifyContent: "space-between", marginRight: 6 }}
+          style={{
+            backgroundColor: "#DFE3E6",
+            position: "absolute",
+            bottom: 59,
+            left: 0,
+            right: 0,
+            borderTopLeftRadius: 15,
+            borderTopRightRadius: 15,
+            overflow: "hidden",
+            height: 270,
+          }}
         >
-          <View style={{ flexDirection: "row", flex: 1 }}>
-            {["1", "2", "3"].map((num) => (
-              <TouchableOpacity
-                key={num}
-                style={{
-                  flex: 1,
-                  backgroundColor: "#FFF",
-                  margin: 3,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 6,
-                  elevation: 1,
-                }}
-                onPress={() => onKeyPress(num)}
-              >
-                <Text
-                  style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
-                >
-                  {num}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: "row", flex: 1 }}>
-            {["4", "5", "6"].map((num) => (
-              <TouchableOpacity
-                key={num}
-                style={{
-                  flex: 1,
-                  backgroundColor: "#FFF",
-                  margin: 3,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 6,
-                  elevation: 1,
-                }}
-                onPress={() => onKeyPress(num)}
-              >
-                <Text
-                  style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
-                >
-                  {num}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: "row", flex: 1 }}>
-            {["7", "8", "9"].map((num) => (
-              <TouchableOpacity
-                key={num}
-                style={{
-                  flex: 1,
-                  backgroundColor: "#FFF",
-                  margin: 3,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 6,
-                  elevation: 1,
-                }}
-                onPress={() => onKeyPress(num)}
-              >
-                <Text
-                  style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
-                >
-                  {num}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: "row", flex: 1 }}>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "#FFF",
-                margin: 3,
-                justifyContent: "center",
-                alignItems: "center",
-                borderRadius: 6,
-              }}
-              onPress={onPrevInput}
-            >
-              <ChevronUp />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "#FFF",
-                margin: 3,
-                justifyContent: "center",
-                alignItems: "center",
-                borderRadius: 6,
-                elevation: 1,
-              }}
-              onPress={() => onKeyPress("0")}
-            >
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-                0
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "#FFF",
-                margin: 3,
-                justifyContent: "center",
-                alignItems: "center",
-                borderRadius: 6,
-              }}
-              onPress={onNextInput}
-            >
-              <ChevronDown />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* KHỐI PHẢI */}
-        <View style={{ flex: 1, justifyContent: "space-between" }}>
-          <Animated.View
+          {/* THANH CÔNG CỤ TRÊN CÙNG */}
+          <View
             style={{
-              flex: 1,
-              margin: 3,
-              transform: [{ scaleX: btnScaleX }, { scaleY: btnScaleY }],
-              opacity: btnOpacity,
-            }}
-          >
-            <TouchableOpacity
-              ref={typeBtnRef}
-              collapsable={false}
-              style={{
-                flex: 1,
-                backgroundColor: "#FFF",
-                justifyContent: "center",
-                alignItems: "center",
-                borderRadius: 6,
-                width: "100%",
-              }}
-              onPress={handleOpenTypeModal}
-            >
-              <ScanText />
-            </TouchableOpacity>
-          </Animated.View>
-
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: "#BBDEFB",
-              margin: 3,
-              justifyContent: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              backgroundColor: "#DFE3E6",
+              paddingHorizontal: 40,
+              paddingVertical: 8,
               alignItems: "center",
-              borderRadius: 6,
             }}
-            onPress={isAdColumn}
           >
-            <Text style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}>
-              <Plus size={24} />
+            <Text style={{ fontSize: 14, fontWeight: "500", color: "#333" }}>
+              {currentSelectedLabel}
             </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={{ backgroundColor: "transparent", borderRadius: 6 }}
+              onPress={handleResetPress}
+            >
+              <RotateCcw
+                size={24}
+                style={{
+                  color: "#FF3B30",
+                  opacity: isConfirmingReset ? 1 : 0.7,
+                }}
+              />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: "#FFCDD2",
-              margin: 3,
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 6,
-            }}
-            onPress={onDelete}
-          >
-            <Delete />
-          </TouchableOpacity>
-
-          {/* Bấm 1 lần ăn ngay, ẩn bàn phím lập tức */}
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: "#CFD8DC",
-              margin: 3,
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 6,
-            }}
-            onPress={onHideKeyboard}
-          >
-            <KeyboardOff />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* POPUP CHỌN TYPE */}
-      <Modal visible={showTypeModal} transparent animationType="none">
-        <Pressable style={{ flex: 1 }} onPress={handleCloseTypeModal}>
-          {typeBtnLayout && (
-            <Animated.View
+          {/* KHU VỰC BÀN PHÍM */}
+          <View style={{ flexDirection: "row", height: 230, padding: 6 }}>
+            {/* KHỐI TRÁI: Bàn phím số (3 cột) */}
+            <View
               style={{
-                position: "absolute",
-                top: typeBtnLayout.y,
-                left: typeBtnLayout.x + typeBtnLayout.width - 180,
-                width: 180,
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                borderRadius: 12,
-                padding: 10,
-                transform: [
-                  {
-                    translateX: popupScale.interpolate({
-                      inputRange: [0.15, 1],
-                      outputRange: [-20, 0],
-                    }),
-                  },
-                  {
-                    translateY: popupScale.interpolate({
-                      inputRange: [0.15, 1],
-                      outputRange: [35, 0],
-                    }),
-                  },
-                  { scale: popupScale },
-                ],
-                opacity: popupOpacity,
+                flex: 3,
+                justifyContent: "space-between",
+                marginRight: 6,
               }}
             >
-              <Text
-                style={{
-                  fontWeight: "600",
-                  fontSize: 13,
-                  textAlign: "center",
-                  marginBottom: 4,
-                  color: "#444",
-                }}
-              >
-                Chọn giao dịch
-              </Text>
-              {transactionTypes.map((type) => (
-                <View
-                  key={type.value}
-                  style={{ backgroundColor: "transparent" }}
-                >
+              <View style={{ flexDirection: "row", flex: 1 }}>
+                {["1", "2", "3"].map((num) => (
                   <TouchableOpacity
+                    key={num}
                     style={{
-                      padding: 10,
+                      flex: 1,
+                      backgroundColor: "#FFF",
+                      margin: 3,
+                      justifyContent: "center",
+                      alignItems: "center",
                       borderRadius: 6,
-                      backgroundColor: "transparent",
+                      elevation: 1,
                     }}
-                    onPress={() => {
-                      setSelectedType(type.value);
-                      handleCloseTypeModal();
-                    }}
+                    onPress={() => onKeyPress(num)}
                   >
                     <Text
                       style={{
-                        fontSize: 13,
-                        color: selectedType === type.value ? "#137333" : "#333",
-                        fontWeight:
-                          selectedType === type.value ? "bold" : "normal",
+                        fontSize: 18,
+                        fontWeight: "bold",
+                        color: "#333",
                       }}
                     >
-                      {type.label}
+                      {num}
                     </Text>
                   </TouchableOpacity>
-                </View>
-              ))}
-            </Animated.View>
-          )}
-        </Pressable>
-      </Modal>
-    </View>
+                ))}
+              </View>
+
+              <View style={{ flexDirection: "row", flex: 1 }}>
+                {["4", "5", "6"].map((num) => (
+                  <TouchableOpacity
+                    key={num}
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#FFF",
+                      margin: 3,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderRadius: 6,
+                      elevation: 1,
+                    }}
+                    onPress={() => onKeyPress(num)}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "bold",
+                        color: "#333",
+                      }}
+                    >
+                      {num}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={{ flexDirection: "row", flex: 1 }}>
+                {["7", "8", "9"].map((num) => (
+                  <TouchableOpacity
+                    key={num}
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#FFF",
+                      margin: 3,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderRadius: 6,
+                      elevation: 1,
+                    }}
+                    onPress={() => onKeyPress(num)}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "bold",
+                        color: "#333",
+                      }}
+                    >
+                      {num}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={{ flexDirection: "row", flex: 1 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#FFF",
+                    margin: 3,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 6,
+                  }}
+                  onPress={onPrevInput}
+                >
+                  <ChevronUp />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#FFF",
+                    margin: 3,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 6,
+                    elevation: 1,
+                  }}
+                  onPress={() => onKeyPress("0")}
+                >
+                  <Text
+                    style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}
+                  >
+                    0
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#FFF",
+                    margin: 3,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 6,
+                  }}
+                  onPress={onNextInput}
+                >
+                  <ChevronDown />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* KHỐI PHẢI */}
+            <View style={{ flex: 1, justifyContent: "space-between" }}>
+              <Animated.View
+                style={{
+                  flex: 1,
+                  margin: 3,
+                  transform: [{ scaleX: btnScaleX }, { scaleY: btnScaleY }],
+                  opacity: btnOpacity,
+                }}
+              >
+                <TouchableOpacity
+                  ref={typeBtnRef}
+                  collapsable={false}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#FFF",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 6,
+                    width: "100%",
+                  }}
+                  onPress={handleOpenTypeModal}
+                >
+                  <ScanText />
+                </TouchableOpacity>
+              </Animated.View>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#BBDEFB",
+                  margin: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 6,
+                }}
+                onPress={isAdColumn}
+              >
+                <Text
+                  style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}
+                >
+                  <Plus size={24} />
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#FFCDD2",
+                  margin: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 6,
+                }}
+                onPress={onDelete}
+              >
+                <Delete />
+              </TouchableOpacity>
+
+              {/* Bấm 1 lần ăn ngay, ẩn bàn phím lập tức */}
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#CFD8DC",
+                  margin: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 6,
+                }}
+                onPress={handleHideKeypad}
+              >
+                <KeyboardOff />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* POPUP CHỌN TYPE */}
+          <Modal visible={showTypeModal} transparent animationType="none">
+            <Pressable style={{ flex: 1 }} onPress={handleCloseTypeModal}>
+              {typeBtnLayout && (
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    top: typeBtnLayout.y,
+                    left: typeBtnLayout.x + typeBtnLayout.width - 180,
+                    width: 180,
+                    backgroundColor: "rgba(255, 255, 255, 0.8)",
+                    borderRadius: 12,
+                    padding: 10,
+                    transform: [
+                      {
+                        translateX: popupScale.interpolate({
+                          inputRange: [0.15, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                      {
+                        translateY: popupScale.interpolate({
+                          inputRange: [0.15, 1],
+                          outputRange: [35, 0],
+                        }),
+                      },
+                      { scale: popupScale },
+                    ],
+                    opacity: popupOpacity,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "600",
+                      fontSize: 13,
+                      textAlign: "center",
+                      marginBottom: 4,
+                      color: "#444",
+                    }}
+                  >
+                    Chọn giao dịch
+                  </Text>
+                  {transactionTypes.map((type) => (
+                    <View
+                      key={type.value}
+                      style={{ backgroundColor: "transparent" }}
+                    >
+                      <TouchableOpacity
+                        style={{
+                          padding: 10,
+                          borderRadius: 6,
+                          backgroundColor: "transparent",
+                        }}
+                        onPress={() => {
+                          setSelectedType(type.value);
+                          handleCloseTypeModal();
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            color:
+                              selectedType === type.value ? "#137333" : "#333",
+                            fontWeight:
+                              selectedType === type.value ? "bold" : "normal",
+                          }}
+                        >
+                          {type.label}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </Animated.View>
+              )}
+            </Pressable>
+          </Modal>
+        </View>
+      </Animated.View>
+    </Portal>
   );
 }

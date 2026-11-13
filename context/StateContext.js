@@ -39,6 +39,8 @@ export const StateProvider = ({ children }) => {
 
   const handleReset = () => setColumnsData([createColumn()]);
 
+  const [isActiveColumn, setIsActiveColumn] = useState();
+
   const addColumn = () => setColumnsData((prev) => [...prev, createColumn()]);
   const totalSummary = columnsData.reduce(
     (acc, col) => acc + (parseFloat(col.result) || 0),
@@ -208,6 +210,8 @@ export const StateProvider = ({ children }) => {
         handleReset,
         selectedType,
         setSelectedType,
+        isActiveColumn,
+        setIsActiveColumn,
       }}
     >
       {children}

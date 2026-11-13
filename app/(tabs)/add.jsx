@@ -1,173 +1,29 @@
-import { CustomKeypadAdvanced } from "@/components";
-import { DEFAULT_WORKER_COLOR } from "@/constants";
-import { useDuricoAlert, useGlobalState } from "@/context";
+import { ColumnCard } from "@/components";
+import { useDuricoAlert } from "@/context";
 import { usePathname } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Keyboard, ScrollView, Text, TextInput, View } from "react-native";
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { useCallback, useEffect, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
 export default function AddScreen() {
-  const {
-    columnsData,
-    setColumnsData,
-    addColumn,
-    colorArray,
-    currentWorker,
-    setCurrentWorker,
-    totalSummary,
-  } = useGlobalState();
-
   const alert = useDuricoAlert();
   const typeModal = useAnchoredModalReanimated();
   const animatedStyle = useAddScreenEnterAnimation();
-
-  const [activeColIndex, setActiveColIndex] = useState(0);
-  const [activeInputIndex, setActiveInputIndex] = useState(0);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-  const translateY = useSharedValue(300);
-
-  const showKeyboard = () => {
-    setIsKeyboardVisible(true);
-    translateY.value = withTiming(0, { duration: 200 });
-  };
-
-  const animatedKeyboardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
   const pathname = usePathname();
+
+  const [ArrayColumn, setArrayColumn] = useState([1]);
 
   useEffect(() => {
     if (typeModal?.visible) {
       typeModal.close();
     }
-    if (isKeyboardVisible == true) {
-      hideKeyboard();
-    }
   }, [pathname]);
 
-  const inputRefs = useRef({});
-
-  useEffect(() => {
-    if (!columnsData || columnsData.length === 0) {
-      if (typeof addColumn === "function") {
-        addColumn();
-      }
-    }
-  }, [columnsData]);
-
-  const focusInput = useCallback((colIdx, inputIdx) => {
-    setActiveColIndex(colIdx);
-    setActiveInputIndex(inputIdx);
-    const key = `${colIdx}-${inputIdx}`;
-    if (inputRefs.current[key]) {
-      inputRefs.current[key].focus();
-    }
+  const handleAddColumn = useCallback(() => {
+    setArrayColumn((prevColumns) => [...prevColumns, {}]);
   }, []);
-
-  const handleInputFocus = useCallback(
-    (colIdx, inputIdx, inputItem) => {
-      Keyboard.dismiss();
-      setActiveColIndex(colIdx);
-      setActiveInputIndex(inputIdx);
-      showKeyboard();
-      if (inputItem.worker_id) {
-        const foundWorker = colorArray.find(
-          (w) => w.id === inputItem.worker_id,
-        );
-        if (foundWorker) {
-          setCurrentWorker(foundWorker);
-        }
-      }
-    },
-    [colorArray, setCurrentWorker],
-  );
-
-  const hideKeyboard = () => {
-    const key = `${activeColIndex}-${activeInputIndex}`;
-    if (inputRefs.current[key]) {
-      inputRefs.current[key].blur();
-    }
-    translateY.value = withTiming(300, { duration: 200 }, (finished) => {
-      if (finished) {
-        runOnJS(setIsKeyboardVisible)(false);
-      }
-    });
-  };
-
-  const updateWeightValue = (newValue) => {
-    if (!columnsData || columnsData.length === 0) return;
-    const updatedData = [...columnsData];
-
-    if (!updatedData[activeColIndex]) {
-      setActiveColIndex(0);
-      return;
-    }
-
-    if (!updatedData[activeColIndex].inputs[activeInputIndex]) {
-      setActiveInputIndex(0);
-    }
-
-    updatedData[activeColIndex].inputs[activeInputIndex] = {
-      ...updatedData[activeColIndex].inputs[activeInputIndex],
-      weight: newValue,
-      worker_id: currentWorker ? currentWorker.id : null,
-      worker_name: currentWorker ? currentWorker.name : null,
-      worker_color: currentWorker ? currentWorker.color : null,
-    };
-
-    const sum = updatedData[activeColIndex].inputs.reduce(
-      (acc, item) => acc + (Number(item.weight) || 0),
-      0,
-    );
-    updatedData[activeColIndex].result = sum.toString();
-    setColumnsData(updatedData);
-  };
-
-  const handleKeyPress = (num) => {
-    if (!columnsData || !columnsData[activeColIndex]) return;
-    const currentVal =
-      columnsData[activeColIndex].inputs[activeInputIndex]?.weight || "";
-    updateWeightValue(currentVal + num);
-  };
-
-  const handleDelete = () => {
-    if (!columnsData || !columnsData[activeColIndex]) return;
-    const currentVal =
-      columnsData[activeColIndex].inputs[activeInputIndex]?.weight || "";
-    if (currentVal.length > 0) {
-      updateWeightValue(currentVal.slice(0, -1));
-    }
-  };
-
-  const handlePrevInput = () => {
-    if (activeInputIndex > 0) {
-      focusInput(activeColIndex, activeInputIndex - 1);
-    } else if (activeColIndex > 0) {
-      const prevColIndex = activeColIndex - 1;
-      const lastInputIdx = columnsData[prevColIndex].inputs.length - 1;
-      focusInput(prevColIndex, lastInputIdx);
-    }
-  };
-
-  const handleNextInput = () => {
-    if (!columnsData || !columnsData[activeColIndex]) return;
-    const currentInputs = columnsData[activeColIndex].inputs || [];
-    if (activeInputIndex < currentInputs.length - 1) {
-      focusInput(activeColIndex, activeInputIndex + 1);
-    } else if (activeColIndex < columnsData.length - 1) {
-      focusInput(activeColIndex + 1, 0);
-    }
-  };
-
   const cardStyle = {
     width: "48%",
     height: 248,
@@ -182,9 +38,11 @@ export default function AddScreen() {
     shadowOpacity: 0.1,
     shadowRadius: 2,
     marginBottom: 10,
+    justifyContent: "space-between",
   };
 
   console.log("addScreen rerender");
+
   return (
     <View style={{ flex: 1 }}>
       <Animated.View
@@ -218,98 +76,13 @@ export default function AddScreen() {
               justifyContent: "space-between",
             }}
           >
-            {columnsData && columnsData.length > 0 ? (
-              columnsData.map((item, colIdx) => (
-                <View key={item.id || colIdx} style={cardStyle}>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      color: "#333",
-                      marginBottom: 8,
-                      textAlign: "center",
-                    }}
-                  >
-                    Cụm #{colIdx + 1}
-                  </Text>
-
-                  {item.inputs &&
-                    item.inputs.map((inputItem, inputIdx) => {
-                      const isActive =
-                        isKeyboardVisible &&
-                        activeColIndex === colIdx &&
-                        activeInputIndex === inputIdx;
-                      const key = `${colIdx}-${inputIdx}`;
-
-                      return (
-                        <TextInput
-                          ref={(el) => (inputRefs.current[key] = el)}
-                          style={{
-                            height: 28,
-                            borderWidth: 2,
-                            borderColor: isActive ? "#333" : "transparent",
-                            borderRadius: 6,
-                            paddingBottom: 0,
-                            paddingTop: 0,
-                            paddingLeft: 10,
-                            textAlignVertical: "center",
-                            marginBottom: 4,
-                            fontSize: 16,
-                            backgroundColor: inputItem.weight
-                              ? inputItem.worker_color === DEFAULT_WORKER_COLOR
-                                ? "#fff"
-                                : inputItem.worker_color
-                              : "#fff",
-                            color: "#333333",
-                            fontWeight: "600",
-                          }}
-                          key={key}
-                          placeholder={`Ô ${inputIdx + 1}`}
-                          placeholderTextColor="#aaa"
-                          keyboardType="numeric"
-                          value={inputItem.weight || ""}
-                          showSoftInputOnFocus={false}
-                          contextMenuHidden={true}
-                          selectTextOnFocus={false}
-                          caretHidden={true}
-                          onFocus={() =>
-                            handleInputFocus(colIdx, inputIdx, inputItem)
-                          }
-                        />
-                      );
-                    })}
-
-                  <View
-                    style={{
-                      marginTop: 4,
-                      padding: 6,
-                      backgroundColor: "#e6f4ea",
-                      borderRadius: 6,
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: "#137333",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Kết quả:
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "bold",
-                        color: "#137333",
-                      }}
-                    >
-                      {item.result || "0"}
-                    </Text>
-                  </View>
-                </View>
+            {ArrayColumn && ArrayColumn.length > 0 ? (
+              ArrayColumn.map((_, colIdx) => (
+                <ColumnCard
+                  key={colIdx}
+                  colIdx={colIdx}
+                  handleAddColumn={handleAddColumn}
+                />
               ))
             ) : (
               <Text style={{ textAlign: "center", width: "100%", padding: 20 }}>
@@ -318,7 +91,7 @@ export default function AddScreen() {
             )}
 
             {/* Ô TỔNG KẾT CHUNG */}
-            <View style={[cardStyle, { justifyContent: "space-between" }]}>
+            <View style={cardStyle}>
               <View>
                 <Text
                   style={{
@@ -360,7 +133,7 @@ export default function AddScreen() {
                       color: "#137333",
                     }}
                   >
-                    {totalSummary || "0"}
+                    1000
                   </Text>
                 </View>
               </View>
@@ -368,31 +141,6 @@ export default function AddScreen() {
           </View>
         </ScrollView>
       </Animated.View>
-      {isKeyboardVisible && (
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              zIndex: 999,
-            },
-            animatedKeyboardStyle,
-          ]}
-          pointerEvents="box-none"
-        >
-          <CustomKeypadAdvanced
-            onKeyPress={handleKeyPress}
-            onDelete={handleDelete}
-            onPrevInput={handlePrevInput}
-            onNextInput={handleNextInput}
-            onHideKeyboard={hideKeyboard}
-            currentWorkerId={currentWorker?.id}
-            isAdColumn={addColumn}
-          />
-        </Animated.View>
-      )}
     </View>
   );
 }
