@@ -24,22 +24,6 @@ export default function AddScreen() {
   const handleAddColumn = useCallback(() => {
     setArrayColumn((prevColumns) => [...prevColumns, {}]);
   }, []);
-  const cardStyle = {
-    width: "48%",
-    height: 248,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#e1e4e8",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    marginBottom: 10,
-    justifyContent: "space-between",
-  };
 
   console.log("addScreen rerender");
 
@@ -90,8 +74,24 @@ export default function AddScreen() {
               </Text>
             )}
 
-            {/* Ô TỔNG KẾT CHUNG */}
-            <View style={cardStyle}>
+            <View
+              style={{
+                width: "48%",
+                height: 248,
+                backgroundColor: "#fff",
+                borderRadius: 8,
+                padding: 12,
+                borderWidth: 1,
+                borderColor: "#e1e4e8",
+                elevation: 2,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                marginBottom: 10,
+                justifyContent: "space-between",
+              }}
+            >
               <View>
                 <Text
                   style={{

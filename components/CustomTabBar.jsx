@@ -10,8 +10,9 @@ import { PRESET_COLORS, PRICE_COLOR } from "../constants";
 import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 import AddColorInput from "./AddColorInput";
-import ButtonShowColor from "./ButtonShowColor";
-import Palette from "./Palette";
+import ColorPaletteBar from "./ColorPaletteBar";
+// import ButtonShowColor from "./ButtonShowColor";
+// import Palette from "./Palette";
 
 export default function CustomTabBar() {
   const pathname = usePathname();
@@ -90,14 +91,7 @@ export default function CustomTabBar() {
       {/* 👉 2. Chỉ hiển thị nút chọn màu khi ĐANG ở màn hình Add hoặc Details */}
       {isAddOrDetailScreen ? (
         <View style={{ position: "relative" }}>
-          <ButtonShowColor isTouch={setShowPaletteFromChild} />
-
-          {showPalette && (
-            <Palette
-              setShowPalette={setShowPalette}
-              addColorModal={addColorModal}
-            />
-          )}
+          <ColorPaletteBar addColorModal={addColorModal}></ColorPaletteBar>
         </View>
       ) : (
         <View style={{ width: 28 }} />

@@ -8,10 +8,9 @@ import {
   withTiming,
 } from "react-native-reanimated";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
-  Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAX_RADIUS = Math.sqrt(
-  SCREEN_WIDTH * SCREEN_WIDTH + SCREEN_HEIGHT * SCREEN_HEIGHT
+  SCREEN_WIDTH * SCREEN_WIDTH + SCREEN_HEIGHT * SCREEN_HEIGHT,
 );
 
 export function useAnchoredModalReanimated() {
@@ -40,59 +39,57 @@ export function useAnchoredModalReanimated() {
       setVisible(true);
 
       translateX.value = withSpring(0, {
-        damping: 20,
+        damping: 40,
         stiffness: 200,
-        mass: 1.1
+        mass: 1.2,
       });
       translateY.value = withSpring(0, {
-        damping: 20,
+        damping: 40,
         stiffness: 200,
-        mass: 1.1
+        mass: 1,
       });
       scale.value = withSpring(1, {
-        damping: 20,
+        damping: 40,
         stiffness: 200,
-        mass: 1.1
+        mass: 1,
       });
       opacity.value = withTiming(1, { duration: 220 });
       backdropOpacity.value = withTiming(1, { duration: 220 });
       backdropScale.value = withSpring(1, {
-      damping: 26,
-      stiffness: 50,
-      mass: 1.1
-    });
-
-
+        damping: 26,
+        stiffness: 50,
+        mass: 1,
+      });
     });
   };
 
   const close = () => {
-  const { x, y } = origin.current;
+    const { x, y } = origin.current;
 
-  translateX.value = withSpring(x - SCREEN_WIDTH / 2, {
-    damping: 20,
-    stiffness: 200,
-    mass: 0.9
-  });
+    translateX.value = withSpring(x - SCREEN_WIDTH / 2, {
+      damping: 20,
+      stiffness: 200,
+      mass: 0.9,
+    });
 
-  translateY.value = withSpring(y - SCREEN_HEIGHT / 2, {
-    damping: 20,
-    stiffness: 200,
-    mass: 0.9
-  });
+    translateY.value = withSpring(y - SCREEN_HEIGHT / 2, {
+      damping: 20,
+      stiffness: 200,
+      mass: 0.9,
+    });
 
-  scale.value = withSpring( 0.1 , {
-    damping: 20,
-    stiffness: 200,
-    mass: 0.9
-  });
+    scale.value = withSpring(0.1, {
+      damping: 20,
+      stiffness: 200,
+      mass: 0.9,
+    });
 
-  opacity.value = withTiming(0, { duration: 200 }, () => {
-    runOnJS(setVisible)(false);
-  });
-  backdropOpacity.value = withTiming(0, { duration: 290 });
-  backdropScale.value = withTiming(0, { duration: 300 });
-};
+    opacity.value = withTiming(0, { duration: 200 }, () => {
+      runOnJS(setVisible)(false);
+    });
+    backdropOpacity.value = withTiming(0, { duration: 290 });
+    backdropScale.value = withTiming(0, { duration: 300 });
+  };
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [
@@ -112,8 +109,8 @@ export function useAnchoredModalReanimated() {
     close,
     animatedStyle,
     backdropStyle,
-    MAX_RADIUS, 
+    MAX_RADIUS,
     SCREEN_WIDTH,
-    SCREEN_HEIGHT
+    SCREEN_HEIGHT,
   };
 }
