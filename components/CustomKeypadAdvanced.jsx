@@ -175,6 +175,10 @@ export default function CustomKeypadAdvanced({
     }
   }, [isKeyboardVisible]);
 
+  const handelAddColumn = () => {
+    console.log("alo alo");
+    isAdColumn();
+  };
   return (
     <Portal>
       <Animated.View
@@ -411,7 +415,7 @@ export default function CustomKeypadAdvanced({
                   alignItems: "center",
                   borderRadius: 6,
                 }}
-                onPress={isAdColumn}
+                onPress={handelAddColumn}
               >
                 <Text
                   style={{ fontSize: 15, fontWeight: "bold", color: "#333" }}

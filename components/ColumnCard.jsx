@@ -1,6 +1,6 @@
 import { CustomKeypadAdvanced } from "@/components";
 import { DEFAULT_WORKER_COLOR } from "@/constants";
-import { useGlobalState } from "@/context";
+import { columnDataRef, useColumnStore, useGlobalState } from "@/context";
 import { usePathname } from "expo-router";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Keyboard, Text, TextInput, View } from "react-native";
@@ -11,13 +11,14 @@ import {
 } from "react-native-reanimated";
 
 const ColumnCard = ({ colIdx, handleAddColumn }) => {
-  const {
-    currentWorker,
-    setCurrentWorker,
-    colorArray,
-    isActiveColumn,
-    setIsActiveColumn,
-  } = useGlobalState();
+  const { currentWorker, setCurrentWorker, colorArray } = useGlobalState();
+
+  const isActiveColumn = useColumnStore(
+    (state) => state.activeColumnIndex === colIdx,
+  );
+  const setActiveColumn = useColumnStore((state) => state.setActiveColumn);
+
+  // Kiểm tra xem cột này có đang active hay không (so sánh số với số)
 
   const [columnData, setColumnData] = useState({
     id: Date.now(),
@@ -27,22 +28,18 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
       worker_name: null,
       worker_color: null,
     }),
-    result: "0",
+    result: 0,
   });
 
   const [activeInputIndex, setActiveInputIndex] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  const lastWorkerIdRef = useRef(null);
-
   const translateY = useSharedValue(300);
   const inputRefs = useRef({});
 
   const showKeyboard = () => {
-    if (isActiveColumn !== colIdx) {
-      setIsKeyboardVisible(true);
-      translateY.value = withTiming(0, { duration: 200 });
-    }
+    setIsKeyboardVisible(true);
+    translateY.value = withTiming(0, { duration: 200 });
   };
 
   const animatedKeyboardStyle = useAnimatedStyle(() => ({
@@ -62,29 +59,18 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
 
   const handleInputFocus = useCallback(
     (inputIdx, inputItem) => {
-      setIsActiveColumn(colIdx);
+      setActiveColumn(colIdx);
       Keyboard.dismiss();
       setActiveInputIndex(inputIdx);
       showKeyboard();
-      if (inputItem.worker_id !== lastWorkerIdRef.current) {
-        if (inputItem.worker_id && colorArray) {
-          const foundWorker = colorArray.find(
-            (w) => w.id === inputItem.worker_id,
-          );
-          if (foundWorker) {
-            setCurrentWorker(foundWorker);
-            lastWorkerIdRef.current = inputItem.worker_id;
-          }
+      if (inputItem.worker_id && colorArray) {
+        const foundWorker = colorArray.find(
+          (w) => w.id === inputItem.worker_id,
+        );
+        if (foundWorker) {
+          setCurrentWorker(foundWorker);
         }
       }
-      // if (inputItem.worker_id && colorArray) {
-      //   const foundWorker = colorArray.find(
-      //     (w) => w.id === inputItem.worker_id,
-      //   );
-      //   if (foundWorker) {
-      //     setCurrentWorker(foundWorker);
-      //   }
-      // }
     },
     [colorArray, setCurrentWorker],
   );
@@ -163,12 +149,18 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
   const addColumn = () => {
     handleAddColumn();
   };
-  console.log("Column card rerender:", colIdx);
   const pathname = usePathname();
-
   useEffect(() => {
     setIsKeyboardVisible(false);
   }, [pathname]);
+  console.log("Column card rerender:", colIdx);
+
+  useEffect(() => {
+    columnDataRef[colIdx] = () => columnData;
+    return () => {
+      delete columnDataRef[colIdx];
+    };
+  }, [columnData, colIdx]);
   return (
     <View style={{ width: "48%", marginBottom: 10 }}>
       <View style={cardStyle}>
@@ -189,7 +181,7 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
             const isActive =
               isKeyboardVisible &&
               activeInputIndex === inputIdx &&
-              isActiveColumn === colIdx;
+              isActiveColumn;
             const key = `${colIdx}-${inputIdx}`;
 
             return (
@@ -260,7 +252,7 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
         </View>
       </View>
 
-      {isKeyboardVisible && isActiveColumn === colIdx && (
+      {isKeyboardVisible && isActiveColumn && (
         <CustomKeypadAdvanced
           onKeyPress={handleKeyPress}
           onDelete={handleDelete}
@@ -276,11 +268,5 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
     </View>
   );
 };
-function arePropsEqual(prevProps, nextProps) {
-  return (
-    prevProps.colIdx === nextProps.colIdx &&
-    prevProps.isActiveColumn === nextProps.isActiveColumn &&
-    prevProps.currentWorker === nextProps.currentWorker
-  );
-}
-export default memo(ColumnCard, arePropsEqual);
+
+export default memo(ColumnCard);

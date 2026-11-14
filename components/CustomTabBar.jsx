@@ -73,7 +73,6 @@ export default function CustomTabBar() {
       addColorModal.close();
     }
   }, [pathname]);
-
   return (
     <View
       style={{
@@ -110,6 +109,7 @@ export default function CustomTabBar() {
           if (!isAddOrDetailScreen) {
             router.push("/add"); // Hoặc điều hướng sang trang add
           } else {
+            // handlePressSaveButton();
             createTransaction(); // Hoặc hành động lưu/tạo transaction
           }
         }}

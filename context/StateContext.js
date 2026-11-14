@@ -14,6 +14,7 @@ import {
   insertWorker,
   updateWorkerName,
 } from "../database";
+import { columnDataRef } from "./ColumnDataRef";
 import { useDuricoAlert } from "./DuricoAlertContext";
 const StateContext = createContext(null);
 
@@ -24,6 +25,32 @@ export const StateProvider = ({ children }) => {
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(true);
   const alert = useDuricoAlert();
+
+  const [columnKeys, setColumnKeys] = useState([Date.now().toString()]);
+
+  // Dùng useRef để lưu các hàm lấy dữ liệu của từng cột mà KHÔNG gây re-render
+  const columnGettersRef = useRef({});
+
+  const addColumns = () => {
+    setColumnKeys((prev) => [...prev, `${Date.now()}-${Math.random()}`]);
+  };
+
+  const registerGetter = (key, getterFn) => {
+    columnGettersRef.current[key] = getterFn;
+  };
+
+  const unregisterGetter = (key) => {
+    delete columnGettersRef.current[key];
+  };
+
+  // Nút Lưu ở TabBar sẽ gọi hàm này để gom toàn bộ dữ liệu insert SQLite
+  const collectAllData = () => {
+    const allData = Object.values(columnGettersRef.current)
+      .map((fn) => fn())
+      .filter(Boolean);
+    return allData;
+  };
+
   const createColumn = () => ({
     id: Date.now(),
     inputs: Array(5).fill({
@@ -46,6 +73,7 @@ export const StateProvider = ({ children }) => {
     (acc, col) => acc + (parseFloat(col.result) || 0),
     0,
   );
+
   const [selectedType, setSelectedType] = useState(0);
   const cacheRef = useRef({
     totalSummary: 0,
@@ -130,20 +158,32 @@ export const StateProvider = ({ children }) => {
   };
   const createTransaction = async () => {
     try {
-      if (totalSummary > 0) {
+      const allColumnsData = Object.values(columnDataRef).map((getData) =>
+        getData(),
+      );
+      const grandTotal = allColumnsData.reduce(
+        (acc, col) => acc + Number(col.result || 0),
+        0,
+      );
+      console.log(
+        "📦 Dữ liệu gom được từ các cột:",
+        allColumnsData,
+        grandTotal,
+      );
+      if (grandTotal > 0) {
         const isChanged =
-          cacheRef.current.totalSummary !== totalSummary ||
+          cacheRef.current.totalSummary !== grandTotal ||
           cacheRef.current.transaction_types !== selectedType;
         if (isChanged) {
           const randomValue = getRandomColor();
           await createTransactionWithDetails(
-            columnsData,
-            totalSummary,
+            allColumnsData,
+            grandTotal,
             selectedType,
             randomValue,
           );
           alert.toast("Thêm giao dịch thành công");
-          cacheRef.current.totalSummary = totalSummary;
+          cacheRef.current.totalSummary = grandTotal;
           cacheRef.current.transaction_types = selectedType;
         } else {
           alert.toast("Giao dịch đã được thêm");
@@ -173,6 +213,7 @@ export const StateProvider = ({ children }) => {
       console.log("getTransec stateContext", error);
     }
   };
+
   if (loading) {
     return (
       <View
@@ -202,7 +243,7 @@ export const StateProvider = ({ children }) => {
         setCurrentWorker,
         columnsData,
         setColumnsData,
-        addColumn,
+        addColumns,
         createTransaction,
         getTransactions,
         getTransactionsDetails,
@@ -212,6 +253,11 @@ export const StateProvider = ({ children }) => {
         setSelectedType,
         isActiveColumn,
         setIsActiveColumn,
+        columnKeys,
+        addColumn,
+        registerGetter,
+        unregisterGetter,
+        collectAllData,
       }}
     >
       {children}
