@@ -13,3 +13,7 @@ export const useColumnStore = create((set, get) => ({
     });
   },
 }));
+export const useTransactionTypeStore = create((set) => ({
+  selectedType: 0,
+  setSelectedType: (type) => set({ selectedType: type }),
+}));

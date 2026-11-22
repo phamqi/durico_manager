@@ -1,4 +1,4 @@
-import { useDuricoAlert, useGlobalState } from "@/context";
+import { useDuricoAlert, useTransactionTypeStore } from "@/context";
 import {
   ChevronDown,
   ChevronUp,
@@ -34,14 +34,13 @@ export default function CustomKeypadAdvanced({
   isAdColumn,
   isKeyboardVisible,
   setIsKeyboardVisible,
+  isReset,
 }) {
-  const { selectedType, setSelectedType, handleReset } = useGlobalState();
   const alert = useDuricoAlert();
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [typeBtnLayout, setTypeBtnLayout] = useState(null);
   const typeBtnRef = useRef(null);
 
-  // Animation riêng cho popup Chọn Type
   const popupScale = useRef(new Animated.Value(0.1)).current;
   const popupOpacity = useRef(new Animated.Value(0)).current;
   const btnScaleX = useRef(new Animated.Value(1)).current;
@@ -54,6 +53,10 @@ export default function CustomKeypadAdvanced({
     { label: "Sau rieng", value: 2 },
   ];
 
+  const selectedType = useTransactionTypeStore((state) => state.selectedType);
+  const setSelectedType = useTransactionTypeStore(
+    (state) => state.setSelectedType,
+  );
   const currentSelectedLabel =
     transactionTypes.find((t) => t.value === selectedType)?.label ||
     "Chọn loại";
@@ -159,7 +162,7 @@ export default function CustomKeypadAdvanced({
         setIsConfirmingReset(false);
       }, 3000);
     } else {
-      handleReset();
+      isReset();
       setIsConfirmingReset(false);
     }
   };
@@ -176,7 +179,6 @@ export default function CustomKeypadAdvanced({
   }, [isKeyboardVisible]);
 
   const handelAddColumn = () => {
-    console.log("alo alo");
     isAdColumn();
   };
   return (
@@ -378,8 +380,6 @@ export default function CustomKeypadAdvanced({
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* KHỐI PHẢI */}
             <View style={{ flex: 1, justifyContent: "space-between" }}>
               <Animated.View
                 style={{
@@ -437,8 +437,6 @@ export default function CustomKeypadAdvanced({
               >
                 <Delete />
               </TouchableOpacity>
-
-              {/* Bấm 1 lần ăn ngay, ẩn bàn phím lập tức */}
               <TouchableOpacity
                 style={{
                   flex: 1,
@@ -454,8 +452,6 @@ export default function CustomKeypadAdvanced({
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* POPUP CHỌN TYPE */}
           <Modal visible={showTypeModal} transparent animationType="none">
             <Pressable style={{ flex: 1 }} onPress={handleCloseTypeModal}>
               {typeBtnLayout && (

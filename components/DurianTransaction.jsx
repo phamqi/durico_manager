@@ -1,150 +1,73 @@
-import { View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { MoveRight } from "lucide-react-native";
+import { useCallback, useState } from "react";
+import { RefreshControl, Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
+import { useGlobalState } from "../context";
 import TransactionCard from "./TransactionCard";
 
-const DATA = [
-  {
-    id: 1,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 2,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 3,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 4,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 5,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-  {
-    id: 6,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 7,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 8,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 9,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 10,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-  {
-    id: 11,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 12,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 13,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 14,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 15,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-  {
-    id: 16,
-    is_hidden: 0,
-    total_summary: 250000,
-    created_at: "2026-06-06 08:30:00",
-    color: "#FF6B6B",
-  },
-  {
-    id: 17,
-    is_hidden: 0,
-    total_summary: 1250000,
-    created_at: "2026-06-06 09:15:00",
-    color: "#4ECDC4",
-  },
-  {
-    id: 18,
-    is_hidden: 1,
-    total_summary: 500000,
-    created_at: "2026-06-06 10:00:00",
-    color: "#45B7D1",
-  },
-  {
-    id: 19,
-    is_hidden: 0,
-    total_summary: 320000,
-    created_at: "2026-06-06 11:45:00",
-    color: "#96CEB4",
-  },
-  {
-    id: 20,
-    is_hidden: 0,
-    total_summary: 890000,
-    created_at: "2026-06-06 14:20:00",
-    color: "#FFEEAD",
-  },
-];
-export default function DurianTransaction({ scrollY }) {
+export default function CoffeeHarvest({ isActive = true, scrollY }) {
+  const { getTransactions } = useGlobalState();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [transactionArray, setTransactionsArray] = useState([]);
+  const types = 2;
+
+  const fetchTransactions = useCallback(
+    async (showLoading) => {
+      if (showLoading) setLoading(true);
+      try {
+        const rows = await getTransactions(types);
+        setTransactionsArray(Array.isArray(rows) ? rows : []);
+        setHasLoadedOnce(true);
+      } catch (error) {
+        console.error("Failed to fetch transactions:", error);
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [getTransactions],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isActive) return;
+      let isMounted = true;
+
+      (async () => {
+        if (!hasLoadedOnce) setLoading(true);
+        try {
+          const rows = await getTransactions(types);
+          if (isMounted) {
+            setTransactionsArray(Array.isArray(rows) ? rows : []);
+            setHasLoadedOnce(true);
+          }
+        } catch (error) {
+          console.error("Failed to load transactions:", error);
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
+      })();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [isActive, hasLoadedOnce, getTransactions]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchTransactions(false);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchTransactions]);
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       if (scrollY) {
@@ -153,26 +76,98 @@ export default function DurianTransaction({ scrollY }) {
     },
   });
 
+  console.log("TABS 3 rerender");
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#bc3c3c", paddingTop: 10 }}>
+    <View style={{ flex: 1, paddingTop: 10 }}>
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        bounces={true}
+        overScrollMode="always"
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingBottom: 250,
           paddingTop: 10,
+          flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {DATA.map((item, index) => (
-          <TransactionCard
-            key={item.id}
-            item={item}
-            index={index}
-            scrollY={scrollY}
-          />
-        ))}
+        {loading ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 40,
+            }}
+          >
+            <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
+          </View>
+        ) : transactionArray.length > 0 ? (
+          transactionArray.map((item, index) => (
+            <TransactionCard
+              key={item.id}
+              item={item}
+              index={index}
+              scrollY={scrollY}
+            />
+          ))
+        ) : (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 60,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#333",
+                textAlign: "center",
+                marginBottom: 6,
+              }}
+            >
+              Chưa có giao dịch nào
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#666",
+                textAlign: "center",
+                marginBottom: 20,
+              }}
+            >
+              Bắt đầu ngay
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => router.push("/add")}
+              style={{
+                backgroundColor: "transparent",
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: "600",
+                }}
+              >
+                <MoveRight />
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </Animated.ScrollView>
     </View>
   );

@@ -25,6 +25,9 @@ export default function AddScreen() {
     setArrayColumn((prevColumns) => [...prevColumns, {}]);
   }, []);
 
+  const handleResetColumn = () => {
+    setArrayColumn([1]);
+  };
   console.log("addScreen rerender");
 
   return (
@@ -66,6 +69,7 @@ export default function AddScreen() {
                   key={colIdx}
                   colIdx={colIdx}
                   handleAddColumn={handleAddColumn}
+                  handleResetColumn={handleResetColumn}
                 />
               ))
             ) : (

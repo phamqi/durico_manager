@@ -11,14 +11,10 @@ import { useGlobalState } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 import AddColorInput from "./AddColorInput";
 import ColorPaletteBar from "./ColorPaletteBar";
-// import ButtonShowColor from "./ButtonShowColor";
-// import Palette from "./Palette";
+import ColorPaletteBarAlwayShow from "./ColorPaletteBarAlwayShow";
 
 export default function CustomTabBar() {
   const pathname = usePathname();
-
-  // 👉 1. Cập nhật điều kiện kiểm tra màn hình Add / Details
-  // Kiểm tra nếu pathname chứa chữ "add" hoặc "details" (hoặc điều chỉnh theo đúng path thực tế của bạn)
   const isAddOrDetailScreen =
     pathname.includes("add") || pathname.includes("details");
 
@@ -35,6 +31,7 @@ export default function CustomTabBar() {
     createTransaction,
     setCurrentWorker,
     currentWorker,
+    isTabActive,
   } = useGlobalState();
   const [showPalette, setShowPalette] = useState(false);
 
@@ -88,35 +85,31 @@ export default function CustomTabBar() {
         paddingHorizontal: 28,
       }}
     >
-      {/* 👉 2. Chỉ hiển thị nút chọn màu khi ĐANG ở màn hình Add hoặc Details */}
+      {isTabActive && !isAddOrDetailScreen && <ColorPaletteBarAlwayShow />}
       {isAddOrDetailScreen ? (
         <View style={{ position: "relative" }}>
-          <ColorPaletteBar addColorModal={addColorModal}></ColorPaletteBar>
+          <ColorPaletteBar addColorModal={addColorModal} />
         </View>
       ) : (
         <View style={{ width: 28 }} />
       )}
-
       <TouchableOpacity
         hitSlop={10}
         onPress={() => {
           if (!isAddOrDetailScreen) {
-            router.push("/add"); // Hoặc điều hướng sang trang add
+            router.push("/add");
           } else {
-            // handlePressSaveButton();
-            createTransaction(); // Hoặc hành động lưu/tạo transaction
+            createTransaction();
           }
         }}
         style={{ marginLeft: "auto" }}
       >
-        {/* 👉 3. Thay đổi icon tương ứng với màn hình */}
         {!isAddOrDetailScreen ? (
           <SquarePen size={28} />
         ) : (
           <SquareCheckBig size={28} />
         )}
       </TouchableOpacity>
-
       {addColorModal.visible && (
         <Portal>
           <Animated.View

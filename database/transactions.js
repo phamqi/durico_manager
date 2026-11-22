@@ -164,3 +164,24 @@ export const getTransactionsDetailsByID = async (transaction_id) => {
     console.log("workerRepo/getWorkerByYear", error);
   }
 };
+export const getDetailsByTypeAndWorker = async (types, worker_id) => {
+  const database = getDB();
+
+  const rows = await database.getAllAsync(
+    `
+    SELECT
+      td.*,
+      t.transaction_types,
+      t.is_hidden,
+      t.created_at AS transaction_created_at
+    FROM transaction_details td
+    INNER JOIN transactions t
+      ON td.transaction_id = t.id
+    WHERE t.transaction_types = ?
+      AND td.worker_id = ?
+    `,
+    [types, worker_id],
+  );
+
+  return rows;
+};

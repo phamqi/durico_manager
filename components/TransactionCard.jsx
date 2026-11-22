@@ -84,7 +84,14 @@ export default function TransactionCard({ item, index, scrollY }) {
             </Text>
           )}
         </View>
-        <Text style={{ color: "#111", fontSize: 24, fontWeight: "bold" }}>
+        <Text
+          style={{
+            color: "#111",
+            fontSize: 24,
+            fontWeight: "bold",
+            paddingVertical: 5,
+          }}
+        >
           {item.total_summary.toLocaleString("vi-VN")} kg
         </Text>
         <Text style={{ color: "#444", fontSize: 12 }}>

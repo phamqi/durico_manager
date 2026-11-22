@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router"; // 👈 Thêm useRouter
+import { useFocusEffect, useRouter } from "expo-router";
 import { MoveRight } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { RefreshControl, Text, TouchableOpacity, View } from "react-native";
@@ -6,43 +6,67 @@ import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { useGlobalState } from "../context";
 import TransactionCard from "./TransactionCard";
 
-export default function CoffeeHarvest({ scrollY }) {
+export default function CoffeeHarvest({ isActive = true, scrollY }) {
   const { getTransactions } = useGlobalState();
-  const router = useRouter(); // 👈 Khởi tạo router để điều hướng
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [transactionArray, setTransactionsArray] = useState([]);
+  const types = 0;
+
+  const fetchTransactions = useCallback(
+    async (showLoading) => {
+      if (showLoading) setLoading(true);
+      try {
+        const rows = await getTransactions(types);
+        setTransactionsArray(Array.isArray(rows) ? rows : []);
+        setHasLoadedOnce(true);
+      } catch (error) {
+        console.error("Failed to fetch transactions:", error);
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [getTransactions, types],
+  );
 
   useFocusEffect(
     useCallback(() => {
+      if (!isActive) return;
       let isMounted = true;
-      setLoading(true);
 
       (async () => {
-        const rows = await getTransactions(0);
-        if (isMounted) {
-          setTransactionsArray(Array.isArray(rows) ? rows : []);
-          setLoading(false);
+        if (!hasLoadedOnce) setLoading(true);
+        try {
+          const rows = await getTransactions(types);
+          if (isMounted) {
+            setTransactionsArray(Array.isArray(rows) ? rows : []);
+            setHasLoadedOnce(true);
+          }
+        } catch (error) {
+          console.error("Failed to load transactions:", error);
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
       })();
 
       return () => {
         isMounted = false;
       };
-    }, [getTransactions]),
+    }, [isActive, hasLoadedOnce, getTransactions, types]),
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const rows = await getTransactions(0);
-      setTransactionsArray(Array.isArray(rows) ? rows : []);
-    } catch (error) {
-      console.error("Failed to refresh transactions:", error);
+      await fetchTransactions(false);
     } finally {
       setRefreshing(false);
     }
-  }, [getTransactions]);
+  }, [fetchTransactions]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -51,6 +75,8 @@ export default function CoffeeHarvest({ scrollY }) {
       }
     },
   });
+
+  console.log("TABS 1 rerender");
 
   return (
     <View style={{ flex: 1, paddingTop: 10 }}>
@@ -63,7 +89,7 @@ export default function CoffeeHarvest({ scrollY }) {
           paddingHorizontal: 20,
           paddingBottom: 250,
           paddingTop: 10,
-          flexGrow: 1, // 👈 Giúp căn giữa theo chiều dọc khi màn hình trống
+          flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -82,7 +108,6 @@ export default function CoffeeHarvest({ scrollY }) {
             <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
           </View>
         ) : transactionArray.length > 0 ? (
-          // Trường hợp có dữ liệu: Hiển thị danh sách card
           transactionArray.map((item, index) => (
             <TransactionCard
               key={item.id}
@@ -92,7 +117,6 @@ export default function CoffeeHarvest({ scrollY }) {
             />
           ))
         ) : (
-          // Trường hợp KHÔNG có giao dịch nào (Mảng rỗng)
           <View
             style={{
               flex: 1,

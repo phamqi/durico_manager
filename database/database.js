@@ -48,6 +48,14 @@ export const initDB = async () => {
       result INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE
     );
+    CREATE INDEX IF NOT EXISTS idx_transaction_details_tx_worker
+      ON transaction_details (transaction_id, worker_id);
+
+    CREATE INDEX IF NOT EXISTS idx_transaction_details_worker_id
+      ON transaction_details (worker_id);
+
+    CREATE INDEX IF NOT EXISTS idx_transactions_types_hidden
+      ON transactions (transaction_types, is_hidden);
   `);
   await db.runAsync(
     `INSERT OR IGNORE INTO worker (id, year, name, color, total_weightning) VALUES (?, ?, ?, ?, ?);`,

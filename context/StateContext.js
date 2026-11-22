@@ -7,6 +7,7 @@ import {
   createTransactionWithDetails,
   deleteWorker,
   getAmountByYear,
+  getDetailsByTypeAndWorker,
   getTransactionsByTypes,
   getTransactionsDetailsByID,
   getWorkersByYear,
@@ -15,7 +16,9 @@ import {
   updateWorkerName,
 } from "../database";
 import { columnDataRef } from "./ColumnDataRef";
+import { useTransactionTypeStore } from "./ColumnStore";
 import { useDuricoAlert } from "./DuricoAlertContext";
+
 const StateContext = createContext(null);
 
 export const StateProvider = ({ children }) => {
@@ -24,16 +27,11 @@ export const StateProvider = ({ children }) => {
   const [currentWorker, setCurrentWorker] = useState();
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(true);
+  const [isTabActive, setIsTabActive] = useState(false);
   const alert = useDuricoAlert();
-
-  const [columnKeys, setColumnKeys] = useState([Date.now().toString()]);
 
   // Dùng useRef để lưu các hàm lấy dữ liệu của từng cột mà KHÔNG gây re-render
   const columnGettersRef = useRef({});
-
-  const addColumns = () => {
-    setColumnKeys((prev) => [...prev, `${Date.now()}-${Math.random()}`]);
-  };
 
   const registerGetter = (key, getterFn) => {
     columnGettersRef.current[key] = getterFn;
@@ -43,7 +41,6 @@ export const StateProvider = ({ children }) => {
     delete columnGettersRef.current[key];
   };
 
-  // Nút Lưu ở TabBar sẽ gọi hàm này để gom toàn bộ dữ liệu insert SQLite
   const collectAllData = () => {
     const allData = Object.values(columnGettersRef.current)
       .map((fn) => fn())
@@ -51,30 +48,7 @@ export const StateProvider = ({ children }) => {
     return allData;
   };
 
-  const createColumn = () => ({
-    id: Date.now(),
-    inputs: Array(5).fill({
-      weight: 0,
-      worker_id: null,
-      worker_name: null,
-      worker_color: null,
-    }),
-    result: 0,
-  });
-
-  const [columnsData, setColumnsData] = useState(() => [createColumn()]);
-
-  const handleReset = () => setColumnsData([createColumn()]);
-
-  const [isActiveColumn, setIsActiveColumn] = useState();
-
-  const addColumn = () => setColumnsData((prev) => [...prev, createColumn()]);
-  const totalSummary = columnsData.reduce(
-    (acc, col) => acc + (parseFloat(col.result) || 0),
-    0,
-  );
-
-  const [selectedType, setSelectedType] = useState(0);
+  // const selectedType = useTransactionTypeStore((state) => state.selectedType);
   const cacheRef = useRef({
     totalSummary: 0,
     transaction_types: 0,
@@ -161,14 +135,10 @@ export const StateProvider = ({ children }) => {
       const allColumnsData = Object.values(columnDataRef).map((getData) =>
         getData(),
       );
+      const selectedType = useTransactionTypeStore.getState().selectedType;
       const grandTotal = allColumnsData.reduce(
         (acc, col) => acc + Number(col.result || 0),
         0,
-      );
-      console.log(
-        "📦 Dữ liệu gom được từ các cột:",
-        allColumnsData,
-        grandTotal,
       );
       if (grandTotal > 0) {
         const isChanged =
@@ -201,7 +171,7 @@ export const StateProvider = ({ children }) => {
       const rows = await getTransactionsByTypes(types);
       return rows;
     } catch (error) {
-      console.log("getTransec stateContext", error);
+      console.log("getTransByTypes stateContext", error);
     }
   };
   const getTransactionsDetails = async (transaction_id) => {
@@ -210,10 +180,18 @@ export const StateProvider = ({ children }) => {
       console.log("state context get by id", rows);
       return rows;
     } catch (error) {
-      console.log("getTransec stateContext", error);
+      console.log("getTransDetails stateContext", error);
     }
   };
-
+  const getDetailsByWorker = async (types, worker_id) => {
+    try {
+      const rows = await getDetailsByTypeAndWorker(types, worker_id);
+      console.log("state context get by worker", rows);
+      return rows;
+    } catch (error) {
+      console.log("getTransByTypes&Worker stateContext", error);
+    }
+  };
   if (loading) {
     return (
       <View
@@ -241,23 +219,15 @@ export const StateProvider = ({ children }) => {
         amount,
         currentWorker,
         setCurrentWorker,
-        columnsData,
-        setColumnsData,
-        addColumns,
         createTransaction,
         getTransactions,
         getTransactionsDetails,
-        totalSummary,
-        handleReset,
-        selectedType,
-        setSelectedType,
-        isActiveColumn,
-        setIsActiveColumn,
-        columnKeys,
-        addColumn,
         registerGetter,
         unregisterGetter,
         collectAllData,
+        isTabActive,
+        setIsTabActive,
+        getDetailsByWorker,
       }}
     >
       {children}

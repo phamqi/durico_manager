@@ -10,16 +10,13 @@ import {
   withTiming,
 } from "react-native-reanimated";
 
-const ColumnCard = ({ colIdx, handleAddColumn }) => {
+const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   const { currentWorker, setCurrentWorker, colorArray } = useGlobalState();
 
   const isActiveColumn = useColumnStore(
     (state) => state.activeColumnIndex === colIdx,
   );
   const setActiveColumn = useColumnStore((state) => state.setActiveColumn);
-
-  // Kiểm tra xem cột này có đang active hay không (so sánh số với số)
-
   const [columnData, setColumnData] = useState({
     id: Date.now(),
     inputs: Array(5).fill({
@@ -149,6 +146,19 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
   const addColumn = () => {
     handleAddColumn();
   };
+  const resetColumn = () => {
+    handleResetColumn();
+    setColumnData({
+      id: Date.now(),
+      inputs: Array(5).fill({
+        weight: "",
+        worker_id: null,
+        worker_name: null,
+        worker_color: null,
+      }),
+      result: 0,
+    });
+  };
   const pathname = usePathname();
   useEffect(() => {
     setIsKeyboardVisible(false);
@@ -261,6 +271,7 @@ const ColumnCard = ({ colIdx, handleAddColumn }) => {
           onHideKeyboard={hideKeyboard}
           currentWorkerId={currentWorker?.id}
           isAdColumn={addColumn}
+          isReset={resetColumn}
           isKeyboardVisible={isKeyboardVisible}
           setIsKeyboardVisible={setIsKeyboardVisible}
         />
