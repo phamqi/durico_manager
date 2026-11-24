@@ -1,6 +1,11 @@
 import { CustomKeypadAdvanced } from "@/components";
 import { DEFAULT_WORKER_COLOR } from "@/constants";
-import { columnDataRef, useColumnStore, useGlobalState } from "@/context";
+import {
+  columnDataRef,
+  useColumnStore,
+  useColumnSumStore,
+  useGlobalState,
+} from "@/context";
 import { usePathname } from "expo-router";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Keyboard, Text, TextInput, View } from "react-native";
@@ -16,15 +21,20 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   const isActiveColumn = useColumnStore(
     (state) => state.activeColumnIndex === colIdx,
   );
+  const setColumnSum = useColumnSumStore((state) => state.setColumnSum);
+  const resetColumnSum = useColumnSumStore((state) => state.resetColumnSum);
+
   const setActiveColumn = useColumnStore((state) => state.setActiveColumn);
-  const [columnData, setColumnData] = useState({
-    id: Date.now(),
-    inputs: Array(5).fill({
+  const createEmptyInputs = (count = 5) =>
+    Array.from({ length: count }, () => ({
       weight: "",
       worker_id: null,
       worker_name: null,
       worker_color: null,
-    }),
+    }));
+  const [columnData, setColumnData] = useState({
+    id: Date.now(),
+    inputs: createEmptyInputs(5),
     result: 0,
   });
 
@@ -80,30 +90,30 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   };
 
   const updateWeightValue = (newValue) => {
-    setColumnData((prevData) => {
-      const updatedInputs = [...prevData.inputs];
-      updatedInputs[activeInputIndex] = {
-        ...updatedInputs[activeInputIndex],
-        weight: newValue,
-        worker_id: currentWorker ? currentWorker.id : null,
-        worker_name: currentWorker ? currentWorker.name : null,
-        worker_color: currentWorker ? currentWorker.color : null,
-      };
+    const updatedInputs = columnData.inputs.map((item, idx) =>
+      idx === activeInputIndex
+        ? {
+            ...item,
+            weight: newValue,
+            worker_id: currentWorker ? currentWorker.id : null,
+            worker_name: currentWorker ? currentWorker.name : null,
+            worker_color: currentWorker ? currentWorker.color : null,
+          }
+        : item,
+    );
 
-      const sum = updatedInputs.reduce(
-        (acc, item) => acc + (Number(item.weight) || 0),
-        0,
-      );
+    const sum = updatedInputs.reduce(
+      (acc, item) => acc + (Number(item.weight) || 0),
+      0,
+    );
 
-      const newData = {
-        ...prevData,
-        inputs: updatedInputs,
-        result: sum.toString(),
-      };
-      return newData;
-    });
+    setColumnData((prevData) => ({
+      ...prevData,
+      inputs: updatedInputs,
+      result: sum.toString(),
+    }));
+    setColumnSum(columnData.id, sum);
   };
-
   const handleKeyPress = (num) => {
     const currentVal = columnData.inputs[activeInputIndex]?.weight || "";
     updateWeightValue(currentVal + num);
@@ -128,34 +138,15 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
     }
   };
 
-  const cardStyle = {
-    width: "100%",
-    height: 248,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#e1e4e8",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    marginBottom: 10,
-  };
   const addColumn = () => {
     handleAddColumn();
   };
   const resetColumn = () => {
     handleResetColumn();
+    resetColumnSum(columnData.id);
     setColumnData({
       id: Date.now(),
-      inputs: Array(5).fill({
-        weight: "",
-        worker_id: null,
-        worker_name: null,
-        worker_color: null,
-      }),
+      inputs: createEmptyInputs(5),
       result: 0,
     });
   };
@@ -173,7 +164,23 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   }, [columnData, colIdx]);
   return (
     <View style={{ width: "48%", marginBottom: 10 }}>
-      <View style={cardStyle}>
+      <View
+        style={{
+          width: "100%",
+          height: 248,
+          backgroundColor: "#fff",
+          borderRadius: 18,
+          padding: 12,
+          borderWidth: 1,
+          borderColor: "#e1e4e8",
+          elevation: 2,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 2,
+          marginBottom: 10,
+        }}
+      >
         <Text
           style={{
             fontSize: 14,
@@ -183,7 +190,7 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
             textAlign: "center",
           }}
         >
-          Cụm #{colIdx + 1}
+          Cụm {colIdx + 1}
         </Text>
 
         {columnData.inputs &&
@@ -202,7 +209,7 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
                   height: 28,
                   borderWidth: 2,
                   borderColor: isActive ? "#333" : "transparent",
-                  borderRadius: 6,
+                  borderRadius: 10,
                   paddingBottom: 0,
                   paddingTop: 0,
                   paddingLeft: 10,
