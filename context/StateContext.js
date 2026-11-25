@@ -8,6 +8,7 @@ import {
   deleteWorker,
   getAmountByYear,
   getDetailsByTypeAndWorker,
+  getTransactionsByID,
   getTransactionsByTypes,
   getTransactionsDetailsByID,
   getWorkersByYear,
@@ -174,10 +175,17 @@ export const StateProvider = ({ children }) => {
       console.log("getTransByTypes stateContext", error);
     }
   };
+  const getTransactionsID = async (transaction_id) => {
+    try {
+      const rows = await getTransactionsByID(transaction_id);
+      return rows;
+    } catch (error) {
+      console.log("getTransDetails stateContext", error);
+    }
+  };
   const getTransactionsDetails = async (transaction_id) => {
     try {
       const rows = await getTransactionsDetailsByID(transaction_id);
-      console.log("state context get by id", rows);
       return rows;
     } catch (error) {
       console.log("getTransDetails stateContext", error);
@@ -186,7 +194,6 @@ export const StateProvider = ({ children }) => {
   const getDetailsByWorker = async (types, worker_id) => {
     try {
       const rows = await getDetailsByTypeAndWorker(types, worker_id);
-      console.log("state context get by worker", rows);
       return rows;
     } catch (error) {
       console.log("getTransByTypes&Worker stateContext", error);
@@ -228,6 +235,7 @@ export const StateProvider = ({ children }) => {
         isTabActive,
         setIsTabActive,
         getDetailsByWorker,
+        getTransactionsID,
       }}
     >
       {children}

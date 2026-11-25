@@ -115,10 +115,13 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
     setColumnSum(columnData.id, sum);
   };
   const handleKeyPress = (num) => {
+    const keyStr = String(num);
     const currentVal = columnData.inputs[activeInputIndex]?.weight || "";
-    updateWeightValue(currentVal + num);
+    if (currentVal === "" && keyStr === "0") {
+      return;
+    }
+    updateWeightValue(currentVal + keyStr);
   };
-
   const handleDelete = () => {
     const currentVal = columnData.inputs[activeInputIndex]?.weight || "";
     if (currentVal.length > 0) {

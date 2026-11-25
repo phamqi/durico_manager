@@ -1,9 +1,10 @@
-import { ColumnCard } from "@/components";
 import { useLocalSearchParams, usePathname } from "expo-router";
 import * as SQLite from "expo-sqlite";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { ColumnCardDetail } from "../../components";
+import { useGlobalState } from "../../context";
 import { useAnchoredModalReanimated } from "../../hooks/useAnchoreModal";
 import { useAddScreenEnterAnimation } from "../../hooks/useAnchoreTab";
 
@@ -15,7 +16,9 @@ export default function DetailsScreen() {
   const pathname = usePathname();
   const { id: transactionId } = useLocalSearchParams();
 
+  const { getTransactionsDetails, getTransactionsID } = useGlobalState();
   const [ArrayColumn, setArrayColumn] = useState([]);
+  const [transactionData, setTransactionData] = useState();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,11 +30,10 @@ export default function DetailsScreen() {
     async function fetchTransactionDetails() {
       try {
         setLoading(true);
-        const rows = await db.getAllAsync(
-          `SELECT * FROM transaction_details WHERE transaction_id = ? ORDER BY column_index, row_index`,
-          [transactionId || 8],
-        );
+        const rows = await getTransactionsDetails(transactionId);
+        const row = await getTransactionsID(transactionId);
         const groupedColumns = {};
+        setTransactionData(row);
         rows.forEach((item) => {
           if (!groupedColumns[item.column_index]) {
             groupedColumns[item.column_index] = [];
@@ -45,6 +47,8 @@ export default function DetailsScreen() {
           }),
         );
         setArrayColumn(formattedColumns);
+        console.log("formattedColumns", formattedColumns);
+        console.log("TransactionData", transactionData);
       } catch (error) {
         console.error("Lỗi khi tải chi tiết transaction:", error);
       } finally {
@@ -54,7 +58,14 @@ export default function DetailsScreen() {
     fetchTransactionDetails();
   }, [transactionId]);
 
-  console.log("detailsScreen rerender");
+  const handleAddColumn = useCallback(() => {
+    setArrayColumn((prevColumns) => [...prevColumns, {}]);
+  }, []);
+
+  const handleResetColumn = () => {
+    setArrayColumn([{ id: Date.now() }]);
+    resetAllSums();
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -98,11 +109,12 @@ export default function DetailsScreen() {
               </Text>
             ) : ArrayColumn && ArrayColumn.length > 0 ? (
               ArrayColumn.map((colData, index) => (
-                <ColumnCard
+                <ColumnCardDetail
+                  handleAddColumn={handleAddColumn}
+                  handleResetColumn={handleResetColumn}
                   key={colData.colIndex || index}
                   colIdx={colData.colIndex}
-                  initialData={colData.items}
-                  disabled={true}
+                  dataColumn={colData.items}
                 />
               ))
             ) : (
@@ -110,78 +122,72 @@ export default function DetailsScreen() {
                 Không có dữ liệu chi tiết cho giao dịch này.
               </Text>
             )}
-            <View
-              style={{
-                width: "48%",
-                height: 248,
-                backgroundColor: "#fff",
-                borderRadius: 8,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: "#e1e4e8",
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 2,
-                marginBottom: 10,
-                justifyContent: "space-between",
-              }}
-            >
-              <View>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "bold",
-                    color: "#333",
-                    marginBottom: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  Tổng kết chung
-                </Text>
-              </View>
-
-              <View>
-                <View
-                  style={{
-                    padding: 6,
-                    backgroundColor: "#e6f4ea",
-                    borderRadius: 6,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+            {transactionData && (
+              <View
+                style={{
+                  width: "48%",
+                  height: 248,
+                  backgroundColor: "#fff",
+                  borderRadius: 8,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: "#e1e4e8",
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  marginBottom: 10,
+                  justifyContent: "space-between",
+                }}
+              >
+                <View>
                   <Text
                     style={{
-                      fontSize: 13,
-                      color: "#137333",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Tổng:
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: "bold",
-                      color: "#137333",
+                      color: "#333",
+                      marginBottom: 8,
+                      textAlign: "center",
                     }}
                   >
-                    {ArrayColumn.reduce(
-                      (acc, col) =>
-                        acc +
-                        col.items.reduce(
-                          (sum, item) => sum + (item.result || 0),
-                          0,
-                        ),
-                      0,
-                    )}
+                    {"Tổng kết" + transactionData?.transaction_types}
                   </Text>
                 </View>
+
+                <View>
+                  <View
+                    style={{
+                      padding: 6,
+                      backgroundColor: "#e6f4ea",
+                      borderRadius: 6,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: "#137333",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Tổng:
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "bold",
+                        color: "#137333",
+                      }}
+                    >
+                      {transactionData?.total_summary}
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </View>
+            )}
           </View>
         </ScrollView>
       </Animated.View>

@@ -34,13 +34,11 @@ import {
   withTiming,
 } from "react-native-reanimated";
 
-// Chỉ 2 ô cần nhập liệu và điều hướng bằng mũi tên lên/xuống
 const EDITABLE_ROWS = [
-  { key: "truBi", label: "Tru bi" },
-  { key: "gia", label: "Gia" },
+  { key: "tare", label: "Tru bi" },
+  { key: "price", label: "Gia" },
 ];
 
-// Tính biểu thức phép nhân nếu có 'x', trả về null nếu biểu thức chưa hoàn chỉnh (vd: "36x")
 const evaluateMultiplyIfNeeded = (rawValue) => {
   const trimmed = String(rawValue ?? "").trim();
   if (!trimmed || !/[xX*]/.test(trimmed)) return null;
@@ -78,8 +76,8 @@ const CustomKeypadAdvanced = ({
 
   const transactionTypes = [
     { label: "Thu nhập", value: 0 },
-    { label: "Ca phe", value: 1 },
-    { label: "Sau rieng", value: 2 },
+    { label: "Cà phê", value: 1 },
+    { label: "Sầu riêng", value: 2 },
   ];
 
   const selectedType = useTransactionTypeStore((state) => state.selectedType);
@@ -582,93 +580,91 @@ const ColumnSumCard = () => {
   );
 
   const [formValues, setFormValues] = useState({
-    truBi: "",
-    gia: "",
+    tare: "",
+    price: "",
   });
 
   const [activeInputIdx, setActiveInputIdx] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const inputRefs = useRef({});
-  const truBiTimerRef = useRef(null);
-  const latestTruBiRef = useRef("");
+  const tareTimerRef = useRef(null);
+  const latesttareRef = useRef("");
 
-  latestTruBiRef.current = formValues.truBi;
+  latesttareRef.current = formValues.tare;
 
   const activeRow = EDITABLE_ROWS[activeInputIdx] ?? EDITABLE_ROWS[0];
 
-  const clearTruBiTimer = useCallback(() => {
-    if (truBiTimerRef.current) {
-      clearTimeout(truBiTimerRef.current);
-      truBiTimerRef.current = null;
+  const cleartareTimer = useCallback(() => {
+    if (tareTimerRef.current) {
+      clearTimeout(tareTimerRef.current);
+      tareTimerRef.current = null;
     }
   }, []);
 
-  // Nếu chuỗi truBi có chứa 'x' và đủ 2 vế thì tính và thay thế bằng kết quả
-  const resolveTruBiIfMultiply = useCallback(() => {
-    clearTruBiTimer();
-    const raw = latestTruBiRef.current;
+  // Nếu chuỗi tare có chứa 'x' và đủ 2 vế thì tính và thay thế bằng kết quả
+  const resolvetareIfMultiply = useCallback(() => {
+    cleartareTimer();
+    const raw = latesttareRef.current;
     if (!/[xX*]/.test(raw)) return;
 
     const computed = evaluateMultiplyIfNeeded(raw);
     if (computed !== null) {
       const nextStr = String(computed);
-      latestTruBiRef.current = nextStr;
+      latesttareRef.current = nextStr;
       setFormValues((prev) => ({
         ...prev,
-        truBi: nextStr,
+        tare: nextStr,
       }));
     }
-  }, [clearTruBiTimer]);
+  }, [cleartareTimer]);
 
   useEffect(() => {
     return () => {
-      clearTruBiTimer();
+      cleartareTimer();
     };
-  }, [clearTruBiTimer]);
+  }, [cleartareTimer]);
+
+  const showKeyboard = useCallback(() => {
+    setIsKeyboardVisible(true);
+  }, []);
 
   const focusInputAt = useCallback(
     (idx) => {
-      if (activeRow?.key === "truBi") {
-        resolveTruBiIfMultiply();
+      if (activeRow?.key === "tare") {
+        resolvetareIfMultiply();
       }
       const clampedIdx = Math.max(0, Math.min(idx, EDITABLE_ROWS.length - 1));
       const targetKey = EDITABLE_ROWS[clampedIdx]?.key;
       setActiveInputIdx(clampedIdx);
-      setIsKeyboardVisible(true);
-      Keyboard.dismiss();
       if (targetKey && inputRefs.current[targetKey]) {
         inputRefs.current[targetKey].focus();
       }
     },
-    [activeRow, resolveTruBiIfMultiply],
+    [activeRow, resolvetareIfMultiply],
   );
 
-  const handleFocusRow = useCallback(
-    (rowKey) => {
-      if (activeRow?.key === "truBi" && rowKey !== "truBi") {
-        resolveTruBiIfMultiply();
+  const handleInputFocus = useCallback(
+    (idx, rowKey) => {
+      if (activeRow?.key === "tare" && rowKey !== "tare") {
+        resolvetareIfMultiply();
       }
-      const idx = EDITABLE_ROWS.findIndex((r) => r.key === rowKey);
-      if (idx !== -1) {
-        setActiveInputIdx(idx);
-      }
-      Keyboard.dismiss();
       setActiveColumn(colIdx);
-      setIsKeyboardVisible(true);
+      Keyboard.dismiss();
+      setActiveInputIdx(idx);
+      showKeyboard();
     },
-    [activeRow, resolveTruBiIfMultiply],
+    [activeRow, resolvetareIfMultiply, setActiveColumn, showKeyboard],
   );
 
   const hideKeyboard = useCallback(() => {
-    if (activeRow?.key === "truBi") {
-      resolveTruBiIfMultiply();
+    if (activeRow?.key === "tare") {
+      resolvetareIfMultiply();
     }
-    setIsKeyboardVisible(false);
     const currentKey = activeRow?.key;
     if (currentKey && inputRefs.current[currentKey]) {
       inputRefs.current[currentKey].blur();
     }
-  }, [activeRow, resolveTruBiIfMultiply]);
+  }, [activeRow, resolvetareIfMultiply]);
 
   const updateActiveValue = useCallback(
     (nextVal) => {
@@ -679,19 +675,19 @@ const ColumnSumCard = () => {
         [key]: nextVal,
       }));
 
-      if (key === "truBi") {
-        latestTruBiRef.current = nextVal;
-        clearTruBiTimer();
+      if (key === "tare") {
+        latesttareRef.current = nextVal;
+        cleartareTimer();
 
         // Chỉ đếm ngược 3s khi giá trị nhập có chứa 'x'
         if (/[xX*]/.test(nextVal)) {
-          truBiTimerRef.current = setTimeout(() => {
-            resolveTruBiIfMultiply();
+          tareTimerRef.current = setTimeout(() => {
+            resolvetareIfMultiply();
           }, 3000);
         }
       }
     },
-    [activeRow, clearTruBiTimer, resolveTruBiIfMultiply],
+    [activeRow, cleartareTimer, resolvetareIfMultiply],
   );
 
   const handleKeyPress = useCallback(
@@ -701,7 +697,7 @@ const ColumnSumCard = () => {
       const currentVal = formValues[key] || "";
 
       if (num === "x") {
-        if (key !== "truBi") return;
+        if (key !== "tare") return;
         // Chỉ cho phép nhập 'x' sau khi đã có số và không nhập 2 dấu 'x' liền nhau
         if (!currentVal || /[xX*]$/.test(currentVal)) return;
         updateActiveValue(`${currentVal}x`);
@@ -736,48 +732,51 @@ const ColumnSumCard = () => {
   }, [activeInputIdx, focusInputAt]);
 
   const handleResetForm = useCallback(() => {
-    clearTruBiTimer();
-    latestTruBiRef.current = "";
+    cleartareTimer();
+    latesttareRef.current = "";
     setFormValues({
-      truBi: "",
-      gia: "",
+      tare: "",
+      price: "",
     });
-  }, [clearTruBiTimer]);
+  }, [cleartareTimer]);
 
   const pathname = usePathname();
   useEffect(() => {
-    if (activeRow?.key === "truBi") {
-      resolveTruBiIfMultiply();
+    if (activeRow?.key === "tare") {
+      resolvetareIfMultiply();
     }
     setIsKeyboardVisible(false);
   }, [pathname]);
 
-  // Giá trị trừ bì số học: ưu tiên kết quả phép nhân nếu hợp lệ, nếu không thì parse số trực tiếp
-  const parsedTruBi = useMemo(() => {
-    const raw = formValues.truBi;
+  useEffect(() => {
+    if (!isActiveColumn) {
+      setIsKeyboardVisible(false);
+    }
+  }, [isActiveColumn]);
+
+  const parsedtare = useMemo(() => {
+    const raw = formValues.tare;
     if (/[xX*]/.test(raw)) {
       const multiplied = evaluateMultiplyIfNeeded(raw);
       return multiplied !== null ? multiplied : 0;
     }
     const num = Number(raw);
     return Number.isNaN(num) ? 0 : num;
-  }, [formValues.truBi]);
+  }, [formValues.tare]);
 
-  // Con = Tong - Tru bi (chỉ hiển thị, không nhập liệu)
-  const conValue = useMemo(() => {
+  const netWeight = useMemo(() => {
     const tong = Number(grandTotal) || 0;
-    return Math.max(0, tong - parsedTruBi);
-  }, [grandTotal, parsedTruBi]);
+    return Math.max(0, tong - parsedtare);
+  }, [grandTotal, parsedtare]);
 
   const finalResult = useMemo(() => {
-    const gia = Number(formValues.gia) || 0;
-    return gia > 0 ? conValue * gia : conValue;
-  }, [conValue, formValues.gia]);
+    const price = Number(formValues.price) || 0;
+    return price > 0 ? netWeight * price : netWeight;
+  }, [netWeight, formValues.price]);
 
   const renderReadonlyRow = (label, value) => (
     <View
       style={{
-        marginBottom: 6,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -785,9 +784,10 @@ const ColumnSumCard = () => {
     >
       <Text
         style={{
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: "600",
           color: "#444",
+          paddingLeft: 10,
         }}
       >
         {label}
@@ -816,65 +816,40 @@ const ColumnSumCard = () => {
     </View>
   );
 
-  const renderEditableRow = (row) => {
-    const isActive =
-      isKeyboardVisible && activeRow?.key && isActiveColumn === row.key;
+  const renderEditableRow = (row, rowIdx) => {
     const displayValue = formValues[row.key] ?? "";
+    const isActive =
+      isKeyboardVisible && isActiveColumn && activeInputIdx === rowIdx;
 
     return (
-      <View
-        key={row.key}
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: "600",
-            color: "#444",
+      <View key={row.key} style={{}}>
+        <TextInput
+          ref={(el) => {
+            inputRefs.current[row.key] = el;
           }}
-        >
-          {row.label}
-        </Text>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => handleFocusRow(row.key)}
-        >
-          <TextInput
-            ref={(el) => {
-              inputRefs.current[row.key] = el;
-            }}
-            editable={false}
-            pointerEvents="none"
-            style={{
-              height: 28,
-              borderWidth: 2,
-              borderColor: "transparent",
-              paddingBottom: 0,
-              paddingTop: 0,
-              paddingLeft: 10,
-              marginBottom: 4,
-              borderWidth: 0,
-              borderColor: isActive ? "#333" : "#transparent",
-              borderRadius: 10,
-              fontWeight: "600",
-              color: "#333333",
-              height: 28,
-              textAlignVertical: "center",
-              fontSize: 16,
-            }}
-            placeholder={`Nhập ${row.label.toLowerCase()}`}
-            placeholderTextColor="#aaa"
-            value={displayValue}
-            showSoftInputOnFocus={false}
-            contextMenuHidden={true}
-            selectTextOnFocus={false}
-            caretHidden={true}
-          />
-        </TouchableOpacity>
+          onFocus={() => handleInputFocus(rowIdx, row.key)}
+          style={{
+            height: 28,
+            borderWidth: 2,
+            borderColor: isActive ? "#333" : "transparent",
+            borderRadius: 10,
+            paddingBottom: 0,
+            paddingTop: 0,
+            paddingRight: 10,
+            marginBottom: 4,
+            fontSize: 16,
+            backgroundColor: "#fff",
+            color: "#333333",
+            fontWeight: "500",
+          }}
+          placeholder={`Nhập ${row.label.toLowerCase()}`}
+          placeholderTextColor="#aaa"
+          value={displayValue}
+          showSoftInputOnFocus={false}
+          contextMenuHidden={true}
+          selectTextOnFocus={false}
+          caretHidden={true}
+        />
       </View>
     );
   };
@@ -899,19 +874,56 @@ const ColumnSumCard = () => {
           justifyContent: "space-between",
         }}
       >
-        {/* 1. Tong */}
-        {renderReadonlyRow("Tong", grandTotal)}
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "bold",
+            color: "#333",
+            marginBottom: 8,
+            textAlign: "center",
+          }}
+        >
+          Tong
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "bold",
+            color: "#333",
+            marginBottom: 8,
+            textAlign: "left",
+            paddingLeft: 10,
+          }}
+        >
+          {grandTotal}
+        </Text>
 
-        {/* 2. Tru bi (nhập liệu) */}
-        {renderEditableRow(EDITABLE_ROWS[0])}
+        {renderEditableRow(EDITABLE_ROWS[0], 0)}
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "bold",
+            color: "#333",
+            marginBottom: 8,
+            textAlign: "left",
+            paddingLeft: 10,
+          }}
+        >
+          {netWeight}
+        </Text>
+        {renderEditableRow(EDITABLE_ROWS[1], 1)}
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "bold",
+            color: "#333",
+            marginBottom: 8,
+            textAlign: "center",
+          }}
+        >
+          {finalResult}
+        </Text>
 
-        {/* 3. Con = Tong - Tru bi (chỉ hiển thị) */}
-        {renderReadonlyRow("Con", conValue)}
-
-        {/* 4. Gia (nhập liệu) */}
-        {renderEditableRow(EDITABLE_ROWS[1])}
-
-        {/* Kết quả */}
         <View
           style={{
             marginTop: 4,
@@ -946,7 +958,7 @@ const ColumnSumCard = () => {
           isReset={handleResetForm}
           isKeyboardVisible={isKeyboardVisible}
           setIsKeyboardVisible={setIsKeyboardVisible}
-          isMultiplyEnabled={activeRow?.key === "truBi"}
+          isMultiplyEnabled={activeRow?.key === "tare"}
         />
       )}
     </View>
