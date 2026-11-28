@@ -4,7 +4,7 @@ import {
   normalizeColumnData,
   useColumnStore,
   useColumnSumStore,
-  useGlobalState,
+  useWorkerStore
 } from "@/context";
 import { usePathname } from "expo-router";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
@@ -21,7 +21,7 @@ const ColumnCardDetail = ({
   handleResetColumn,
   dataColumn,
 }) => {
-  const { currentWorker, setCurrentWorker, colorArray } = useGlobalState();
+  const colorArray = useWorkerStore.getState().colorArray;
 
   const isActiveColumn = useColumnStore(
     (state) => state.activeColumnIndex === colIdx,
@@ -30,6 +30,9 @@ const ColumnCardDetail = ({
   const resetColumnSum = useColumnSumStore((state) => state.resetColumnSum);
 
   const setActiveColumn = useColumnStore((state) => state.setActiveColumn);
+
+  const currentWorker = useWorkerStore((state) => state.currentWorker);
+  const setCurrentWorker = useWorkerStore((state) => state.setCurrentWorker);
   const createEmptyInputs = (count = 5) =>
     Array.from({ length: count }, () => ({
       weight: "",
@@ -319,7 +322,6 @@ const ColumnCardDetail = ({
           onPrevInput={handlePrevInput}
           onNextInput={handleNextInput}
           onHideKeyboard={hideKeyboard}
-          currentWorkerId={currentWorker?.id}
           isAdColumn={addColumn}
           isReset={resetColumn}
           isKeyboardVisible={isKeyboardVisible}

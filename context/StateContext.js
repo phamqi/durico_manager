@@ -8,6 +8,7 @@ import {
   deleteWorker,
   getAmountByYear,
   getDetailsByTypeAndWorker,
+  getTotalWeight,
   getTransactionsByID,
   getTransactionsByTypes,
   getTransactionsDetailsByID,
@@ -17,21 +18,20 @@ import {
   updateWorkerName,
 } from "../database";
 import { columnDataRef } from "./ColumnDataRef";
-import { useTransactionTypeStore } from "./ColumnStore";
+import { useTransactionTypeStore, useWorkerStore } from "./ColumnStore";
 import { useDuricoAlert } from "./DuricoAlertContext";
 
 const StateContext = createContext(null);
 
 export const StateProvider = ({ children }) => {
-  const [colorArray, setColorArray] = useState([]);
-  const [color, setColor] = useState("black");
-  const [currentWorker, setCurrentWorker] = useState();
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(true);
   const [isTabActive, setIsTabActive] = useState(false);
   const alert = useDuricoAlert();
 
-  // Dùng useRef để lưu các hàm lấy dữ liệu của từng cột mà KHÔNG gây re-render
+  const setCurrentWorker = useWorkerStore((state) => state.setCurrentWorker);
+  const setColorArray = useWorkerStore((state) => state.setColorArray);
+
   const columnGettersRef = useRef({});
 
   const registerGetter = (key, getterFn) => {
@@ -48,8 +48,6 @@ export const StateProvider = ({ children }) => {
       .filter(Boolean);
     return allData;
   };
-
-  // const selectedType = useTransactionTypeStore((state) => state.selectedType);
   const cacheRef = useRef({
     totalSummary: 0,
     transaction_types: 0,
@@ -199,6 +197,18 @@ export const StateProvider = ({ children }) => {
       console.log("getTransByTypes&Worker stateContext", error);
     }
   };
+  const getTotalWeightByYear = async (
+    worker_id,
+    year = new Date().getFullYear(),
+  ) => {
+    try {
+      const rows = await getTotalWeight(worker_id, year);
+      console.log("getTotal stateContext", worker_id, rows);
+      return rows;
+    } catch (error) {
+      console.log("getTotal stateContext", error);
+    }
+  };
   if (loading) {
     return (
       <View
@@ -215,17 +225,11 @@ export const StateProvider = ({ children }) => {
   return (
     <StateContext.Provider
       value={{
-        colorArray,
-        setColorArray,
-        color,
-        setColor,
         addWorker,
         updateWorker,
         removeWorker,
         createAmountContext,
         amount,
-        currentWorker,
-        setCurrentWorker,
         createTransaction,
         getTransactions,
         getTransactionsDetails,
@@ -236,6 +240,7 @@ export const StateProvider = ({ children }) => {
         setIsTabActive,
         getDetailsByWorker,
         getTransactionsID,
+        getTotalWeightByYear,
       }}
     >
       {children}

@@ -22,13 +22,16 @@ export default function AddScreen() {
   }, [pathname]);
 
   const handleAddColumn = useCallback(() => {
-    setArrayColumn((prevColumns) => [...prevColumns, {}]);
+    setArrayColumn((prevColumns) => [...prevColumns, { id: Date.now() }]);
   }, []);
 
   const handleResetColumn = () => {
     setArrayColumn([{ id: Date.now() }]);
     resetAllSums();
   };
+  const handleRemoveColumn = useCallback((colId) => {
+    setArrayColumn((prev) => prev.filter((col) => col.id !== colId));
+  }, []);
   console.log("addScreen rerender");
 
   return (
@@ -56,6 +59,7 @@ export default function AddScreen() {
             borderRadius: 8,
           }}
           contentContainerStyle={{ paddingBottom: 320 }}
+          showsVerticalScrollIndicator={false}
         >
           <View
             style={{
@@ -69,12 +73,14 @@ export default function AddScreen() {
               ArrayColumn.map((item, colIdx) => (
                 <ColumnCard
                   key={item.id}
+                  colId={item.id}
                   colIdx={colIdx}
                   handleAddColumn={handleAddColumn}
                   handleResetColumn={handleResetColumn}
+                  onRemoveColumn={handleRemoveColumn}
                 />
               ))}
-            <ColumnSumCard />
+            <ColumnSumCard handleAddColumn={handleAddColumn} />
           </View>
         </ScrollView>
       </Animated.View>

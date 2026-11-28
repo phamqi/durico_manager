@@ -4,27 +4,56 @@ import {
   columnDataRef,
   useColumnStore,
   useColumnSumStore,
-  useGlobalState,
+  useWorkerStore,
 } from "@/context";
 import { usePathname } from "expo-router";
+import { RotateCcw, X } from "lucide-react-native";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Keyboard, Text, TextInput, View } from "react-native";
 import {
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, {
+  Easing,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 
-const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
-  const { currentWorker, setCurrentWorker, colorArray } = useGlobalState();
+const MENU_CLOSED_WIDTH = 28;
+const MENU_CLOSED_HEIGHT = 16;
+const MENU_OPEN_WIDTH = 66;
+const MENU_OPEN_HEIGHT = 30;
+
+const BTN_CLOSED_SIZE = 0;
+const BTN_OPEN_SIZE = 23;
+const BTN_GAP = 7;
+
+const ColumnCard = ({
+  colId,
+  colIdx,
+  handleAddColumn,
+  handleResetColumn,
+  onRemoveColumn,
+}) => {
+  const colorArray = useWorkerStore.getState().colorArray;
+  const setCurrentWorker = useWorkerStore((state) => state.setCurrentWorker);
 
   const isActiveColumn = useColumnStore(
     (state) => state.activeColumnIndex === colIdx,
   );
+
   const setColumnSum = useColumnSumStore((state) => state.setColumnSum);
   const resetColumnSum = useColumnSumStore((state) => state.resetColumnSum);
-
   const setActiveColumn = useColumnStore((state) => state.setActiveColumn);
+  const setKeyMode = useColumnStore((state) => state.setKeyMode);
+
   const createEmptyInputs = (count = 5) =>
     Array.from({ length: count }, () => ({
       weight: "",
@@ -32,22 +61,24 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
       worker_name: null,
       worker_color: null,
     }));
+
   const [columnData, setColumnData] = useState({
-    id: Date.now(),
+    id: colId,
     inputs: createEmptyInputs(5),
     result: 0,
   });
 
   const [activeInputIndex, setActiveInputIndex] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const translateY = useSharedValue(300);
   const inputRefs = useRef({});
 
-  const showKeyboard = () => {
+  const showKeyboard = useCallback(() => {
     setIsKeyboardVisible(true);
     translateY.value = withTiming(0, { duration: 200 });
-  };
+  }, [translateY]);
 
   const animatedKeyboardStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -56,17 +87,19 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   const focusInput = useCallback(
     (inputIdx) => {
       setActiveInputIndex(inputIdx);
+      setKeyMode("add");
       const key = `${colIdx}-${inputIdx}`;
       if (inputRefs.current[key]) {
         inputRefs.current[key].focus();
       }
     },
-    [colIdx],
+    [colIdx, setKeyMode],
   );
 
   const handleInputFocus = useCallback(
     (inputIdx, inputItem) => {
       setActiveColumn(colIdx);
+      setKeyMode("add");
       Keyboard.dismiss();
       setActiveInputIndex(inputIdx);
       showKeyboard();
@@ -79,7 +112,14 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
         }
       }
     },
-    [colorArray, setCurrentWorker],
+    [
+      colIdx,
+      colorArray,
+      setActiveColumn,
+      setCurrentWorker,
+      setKeyMode,
+      showKeyboard,
+    ],
   );
 
   const hideKeyboard = () => {
@@ -90,6 +130,7 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   };
 
   const updateWeightValue = (newValue) => {
+    const currentWorker = useWorkerStore.getState().currentWorker;
     const updatedInputs = columnData.inputs.map((item, idx) =>
       idx === activeInputIndex
         ? {
@@ -112,8 +153,9 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
       inputs: updatedInputs,
       result: sum.toString(),
     }));
-    setColumnSum(columnData.id, sum);
+    setColumnSum(colId, sum);
   };
+
   const handleKeyPress = (num) => {
     const keyStr = String(num);
     const currentVal = columnData.inputs[activeInputIndex]?.weight || "";
@@ -122,6 +164,7 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
     }
     updateWeightValue(currentVal + keyStr);
   };
+
   const handleDelete = () => {
     const currentVal = columnData.inputs[activeInputIndex]?.weight || "";
     if (currentVal.length > 0) {
@@ -144,20 +187,39 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
   const addColumn = () => {
     handleAddColumn();
   };
+
   const resetColumn = () => {
     handleResetColumn();
-    resetColumnSum(columnData.id);
+    resetColumnSum(colId);
     setColumnData({
       id: Date.now(),
       inputs: createEmptyInputs(5),
       result: 0,
     });
   };
+
+  const handleRefreshCurrentColumn = () => {
+    setMenuOpen(false);
+    resetColumnSum(colId);
+    setColumnData({
+      id: colId,
+      inputs: createEmptyInputs(5),
+      result: 0,
+    });
+  };
+
+  const handleCloseCurrentColumn = () => {
+    setMenuOpen(false);
+    setIsKeyboardVisible(false);
+    resetColumnSum(colId);
+    onRemoveColumn(colId);
+  };
+
   const pathname = usePathname();
   useEffect(() => {
     setIsKeyboardVisible(false);
+    setMenuOpen(false);
   }, [pathname]);
-  console.log("Column card rerender:", colIdx);
 
   useEffect(() => {
     columnDataRef[colIdx] = () => columnData;
@@ -165,15 +227,82 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
       delete columnDataRef[colIdx];
     };
   }, [columnData, colIdx]);
+
+  // Animation mở rộng / thu nhỏ mượt đồng bộ cho khung và 2 nút
+  const openProgress = useSharedValue(0);
+
+  useEffect(() => {
+    openProgress.value = withTiming(menuOpen ? 1 : 0, {
+      duration: 240,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+    });
+  }, [menuOpen, openProgress]);
+
+  const containerAnimStyle = useAnimatedStyle(() => ({
+    width: interpolate(
+      openProgress.value,
+      [0, 1],
+      [MENU_CLOSED_WIDTH, MENU_OPEN_WIDTH],
+    ),
+    height: interpolate(
+      openProgress.value,
+      [0, 1],
+      [MENU_CLOSED_HEIGHT, MENU_OPEN_HEIGHT],
+    ),
+  }));
+
+  const dotsAnimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(openProgress.value, [0, 0.45], [1, 0]),
+    width: interpolate(openProgress.value, [0, 1], [20, 0]),
+    transform: [{ scale: interpolate(openProgress.value, [0, 1], [1, 0.3]) }],
+  }));
+
+  const firstButtonAnimStyle = useAnimatedStyle(() => {
+    const size = interpolate(
+      openProgress.value,
+      [0, 1],
+      [BTN_CLOSED_SIZE, BTN_OPEN_SIZE],
+    );
+    return {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      opacity: openProgress.value,
+      transform: [{ scale: interpolate(openProgress.value, [0, 1], [0.4, 1]) }],
+    };
+  });
+
+  const actionButtonAnimStyle = useAnimatedStyle(() => {
+    const size = interpolate(
+      openProgress.value,
+      [0, 1],
+      [BTN_CLOSED_SIZE, BTN_OPEN_SIZE],
+    );
+    return {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      marginLeft: interpolate(openProgress.value, [0, 1], [0, BTN_GAP]),
+      opacity: openProgress.value,
+      transform: [{ scale: interpolate(openProgress.value, [0, 1], [0.4, 1]) }],
+    };
+  });
+
   return (
-    <View style={{ width: "48%", marginBottom: 10 }}>
+    <View
+      style={{
+        width: "48%",
+        marginBottom: 10,
+        height: 248,
+      }}
+    >
       <View
         style={{
           width: "100%",
-          height: 248,
+          height: "100%",
           backgroundColor: "#fff",
           borderRadius: 18,
-          padding: 12,
+          padding: 9,
           borderWidth: 1,
           borderColor: "#e1e4e8",
           elevation: 2,
@@ -181,9 +310,145 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.1,
           shadowRadius: 2,
-          marginBottom: 10,
+          overflow: "hidden",
         }}
       >
+        {/* Lớp nền trong suốt: bấm ra ngoài để đóng menu */}
+        {menuOpen && (
+          <Pressable
+            onPress={() => setMenuOpen(false)}
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                backgroundColor: "rgba(255,255,255, 0.6)",
+                zIndex: 15,
+              },
+            ]}
+          />
+        )}
+
+        {/* Menu mở rộng / thu nhỏ mượt */}
+        <View
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            zIndex: 20,
+          }}
+        >
+          <Animated.View
+            style={[
+              {
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#a2a2a2c1",
+                borderRadius: 14,
+                overflow: "hidden",
+                paddingHorizontal: 4,
+              },
+              containerAnimStyle,
+            ]}
+          >
+            <Animated.View
+              pointerEvents={menuOpen ? "none" : "auto"}
+              style={[
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                },
+                dotsAnimStyle,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => setMenuOpen(true)}
+                hitSlop={10}
+                activeOpacity={0.7}
+                style={{
+                  width: "100%",
+                  height: 20,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                }}
+              >
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 2.5,
+                    backgroundColor: "#cf222e",
+                  }}
+                ></View>
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 2.5,
+                    backgroundColor: "#0969da",
+                  }}
+                ></View>
+              </TouchableOpacity>
+            </Animated.View>
+            <Animated.View
+              pointerEvents={menuOpen ? "auto" : "none"}
+              style={[
+                {
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#cf222e",
+                  overflow: "hidden",
+                },
+                firstButtonAnimStyle,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={handleCloseCurrentColumn}
+                hitSlop={{ top: 6, bottom: 6, left: 15, right: 0 }}
+                activeOpacity={0.75}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={16} color="#333" strokeWidth={3.5} />
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View
+              pointerEvents={menuOpen ? "auto" : "none"}
+              style={[
+                {
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#286fc0",
+                  overflow: "hidden",
+                },
+                actionButtonAnimStyle,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={handleRefreshCurrentColumn}
+                hitSlop={{ top: 6, bottom: 6, left: 0, right: 15 }}
+                activeOpacity={0.75}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <RotateCcw size={16} color="#333" strokeWidth={3.5} />
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        </View>
+
         <Text
           style={{
             fontSize: 14,
@@ -279,7 +544,6 @@ const ColumnCard = ({ colIdx, handleAddColumn, handleResetColumn }) => {
           onPrevInput={handlePrevInput}
           onNextInput={handleNextInput}
           onHideKeyboard={hideKeyboard}
-          currentWorkerId={currentWorker?.id}
           isAdColumn={addColumn}
           isReset={resetColumn}
           isKeyboardVisible={isKeyboardVisible}

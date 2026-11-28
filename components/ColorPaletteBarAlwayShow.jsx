@@ -1,11 +1,11 @@
 import { TouchableOpacity, View } from "react-native";
-import Animated from "react-native-reanimated";
-import { useGlobalState } from "../context";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useWorkerStore } from "../context";
 
 export default function ColorPaletteBarAlwayShow() {
-  const { setColor, colorArray, currentWorker, setCurrentWorker } =
-    useGlobalState();
-
+  const colorArray = useWorkerStore.getState().colorArray;
+  const currentWorker = useWorkerStore((state) => state.currentWorker);
+  const setCurrentWorker = useWorkerStore((state) => state.setCurrentWorker);
   return (
     <View
       style={{
@@ -14,13 +14,13 @@ export default function ColorPaletteBarAlwayShow() {
       }}
     >
       <Animated.View
+        entering={FadeIn.duration(350)}
         style={[{ flexDirection: "row", alignItems: "center", gap: 8 }]}
       >
         {colorArray.map((c, i) => (
           <TouchableOpacity
             key={c.id || i}
             onPress={() => {
-              setColor(c.color);
               setCurrentWorker(c);
             }}
             style={{

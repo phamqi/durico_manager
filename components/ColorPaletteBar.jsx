@@ -3,6 +3,7 @@ import { Plus } from "lucide-react-native";
 import { useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import Animated, {
+  FadeIn,
   interpolateColor,
   runOnJS,
   useAnimatedStyle,
@@ -10,21 +11,20 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { useGlobalState } from "../context";
+import { useWorkerStore } from "../context";
 
 export default function ColorPaletteBar({ addColorModal }) {
-  const { setColor, colorArray, currentWorker, setCurrentWorker } =
-    useGlobalState();
+  const colorArray = useWorkerStore.getState().colorArray;
+  const currentWorker = useWorkerStore((state) => state.currentWorker);
+  const setCurrentWorker = useWorkerStore((state) => state.setCurrentWorker);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Shared values
   const scaleXAnim = useSharedValue(0);
   const opacityAnim = useSharedValue(0);
-  const progressAnim = useSharedValue(0); // Điều khiển background và bo góc
+  const progressAnim = useSharedValue(0);
 
   const togglePalette = () => {
     if (isOpen) {
-      // ĐÓNG: Tăng thời gian ẩn background lên (ví dụ: 300ms) để nó biến mất từ từ, mượt mà hơn
       opacityAnim.value = withTiming(0, { duration: 200 });
       progressAnim.value = withTiming(0, { duration: 300 });
       scaleXAnim.value = withTiming(
@@ -41,14 +41,11 @@ export default function ColorPaletteBar({ addColorModal }) {
       );
     } else {
       setIsOpen(true);
-      // MỞ: Tăng thời gian hiện background lên lâu hơn (ví dụ: 450ms) để background hiện lên cực kỳ thong thả, êm ái
       scaleXAnim.value = withSpring(1, { damping: 40, stiffness: 250 });
       opacityAnim.value = withTiming(1, { duration: 300 });
       progressAnim.value = withTiming(1, { duration: 450 });
     }
   };
-
-  // 1. Style cho nút chính: Background chuyển màu chậm rãi theo progressAnim
   const mainButtonAnimatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       progressAnim.value,
@@ -62,8 +59,6 @@ export default function ColorPaletteBar({ addColorModal }) {
       [20, 0],
     ),
   }));
-
-  // 2. Style cho thanh palette bên phải
   const paletteAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: scaleXAnim.value }],
     opacity: opacityAnim.value,
@@ -74,7 +69,6 @@ export default function ColorPaletteBar({ addColorModal }) {
     ),
   }));
 
-  // 3. Style mờ/hiện cho các nút màu bên trong
   const innerButtonOpacityStyle = useAnimatedStyle(() => ({
     opacity: opacityAnim.value,
   }));
@@ -88,6 +82,7 @@ export default function ColorPaletteBar({ addColorModal }) {
     >
       <Animated.View
         ref={addColorModal.anchorRef}
+        entering={FadeIn.duration(350)}
         style={[
           {
             paddingHorizontal: 8,
@@ -108,8 +103,6 @@ export default function ColorPaletteBar({ addColorModal }) {
           }}
         />
       </Animated.View>
-
-      {/* 2. Danh sách Palette nở ngang khi isOpen = true */}
       {isOpen && (
         <Animated.View
           style={[
@@ -129,7 +122,6 @@ export default function ColorPaletteBar({ addColorModal }) {
             paletteAnimatedStyle,
           ]}
         >
-          {/* Danh sách các màu khác */}
           <Animated.View
             style={[
               { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -142,7 +134,6 @@ export default function ColorPaletteBar({ addColorModal }) {
                   <TouchableOpacity
                     key={c.id || i}
                     onPress={() => {
-                      setColor(c.color);
                       setCurrentWorker(c);
                       togglePalette();
                     }}

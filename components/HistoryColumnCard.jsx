@@ -135,7 +135,6 @@ export default function WorkerHistorySessionList({ rawRows = [] }) {
             borderColor: "#e1e4e8",
           }}
         >
-          {/* Header từng giao dịch: ngày, giờ, tổng */}
           <View
             style={{
               flexDirection: "row",

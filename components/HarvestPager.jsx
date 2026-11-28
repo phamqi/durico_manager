@@ -3,15 +3,18 @@ import { MoveRight } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { RefreshControl, Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
-import { useGlobalState } from "../context";
+import { useGlobalState, useWorkerStore } from "../context";
 import WorkerHistorySessionList from "./HistoryColumnCard";
 
 export default function CoffeeHarvest({ scrollY }) {
-  const { currentWorker, getDetailsByWorker } = useGlobalState();
+  const currentWorker = useWorkerStore((state) => state.currentWorker);
+
+  const { getDetailsByWorker, getTotalWeightByYear } = useGlobalState();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [transactionArray, setTransactionsArray] = useState([]);
+  const [totalWeight, setTotalWeight] = useState();
 
   useFocusEffect(
     useCallback(() => {
@@ -20,10 +23,12 @@ export default function CoffeeHarvest({ scrollY }) {
 
       (async () => {
         const rows = await getDetailsByWorker(0, currentWorker.id);
+        const total = await getTotalWeightByYear(currentWorker.id);
         if (isMounted) {
           setTransactionsArray(Array.isArray(rows) ? rows : []);
+          setTotalWeight(total);
           setLoading(false);
-          console.log("Data Harvest", currentWorker.id, rows);
+          console.log("Data Harvest", currentWorker.id, total);
         }
       })();
       return () => {
@@ -53,14 +58,35 @@ export default function CoffeeHarvest({ scrollY }) {
   });
 
   return (
-    <View style={{ flex: 1, paddingTop: 10 }}>
+    <View style={{ flex: 1 }}>
+      {!loading && transactionArray.length > 0 && (
+        <View
+          style={{
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            backgroundColor: "#fff",
+            borderBottomWidth: 1,
+            borderBottomColor: "#e1e4e8",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ fontSize: 15, color: "#555", fontWeight: "600" }}>
+            Tổng sản lượng năm:
+          </Text>
+          <Text style={{ fontSize: 18, fontWeight: "bold", color: "#137333" }}>
+            {totalWeight}
+          </Text>
+        </View>
+      )}
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         bounces={true}
         overScrollMode="always"
         contentContainerStyle={{
-          paddingHorizontal: 20,
+          paddingHorizontal: 10,
           paddingBottom: 250,
           paddingTop: 10,
           flexGrow: 1,
@@ -82,7 +108,9 @@ export default function CoffeeHarvest({ scrollY }) {
             <Text style={{ fontWeight: "600", fontSize: 16 }}>Loading...</Text>
           </View>
         ) : transactionArray.length > 0 ? (
-          <WorkerHistorySessionList rawRows={transactionArray} />
+          <>
+            <WorkerHistorySessionList rawRows={transactionArray} />
+          </>
         ) : (
           <View
             style={{

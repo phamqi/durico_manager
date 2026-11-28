@@ -2,7 +2,8 @@ export { columnDataRef, normalizeColumnData } from "./ColumnDataRef";
 export {
     useColumnStore,
     useColumnSumStore,
-    useTransactionTypeStore
+    useTransactionTypeStore,
+    useWorkerStore
 } from "./ColumnStore";
 export { DuricoAlertProvider, useDuricoAlert } from "./DuricoAlertContext";
 export { StateProvider, useGlobalState } from "./StateContext";

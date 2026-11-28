@@ -1,5 +1,5 @@
 import { router, usePathname } from "expo-router";
-import { PiggyBank, SquareCheckBig, SquarePen } from "lucide-react-native";
+import { PiggyBank } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Portal } from "react-native-paper";
@@ -7,12 +7,12 @@ import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PRESET_COLORS, PRICE_COLOR } from "../constants";
-import { useGlobalState } from "../context";
+import { useGlobalState, useWorkerStore } from "../context";
 import { useAnchoredModalReanimated } from "../hooks/useAnchoreModal";
 import AddColorInput from "./AddColorInput";
+import BlurMaskActionIcon from "./BlurMaskActionIcon";
 import ColorPaletteBar from "./ColorPaletteBar";
 import ColorPaletteBarAlwayShow from "./ColorPaletteBarAlwayShow";
-
 export default function CustomTabBar() {
   const pathname = usePathname();
   const isAddOrDetailScreen =
@@ -21,19 +21,17 @@ export default function CustomTabBar() {
   const insets = useSafeAreaInsets();
 
   const {
-    setColor,
-    colorArray,
     addWorker,
     updateWorker,
     removeWorker,
     createAmountContext,
     amount,
     createTransaction,
-    setCurrentWorker,
-    currentWorker,
     isTabActive,
   } = useGlobalState();
-  const [showPalette, setShowPalette] = useState(false);
+  const colorArray = useWorkerStore.getState().colorArray;
+  const currentWorker = useWorkerStore((state) => state.currentWorker);
+  const setCurrentWorker = useWorkerStore((state) => state.setCurrentWorker);
 
   const [tempColor, setTempColor] = useState(null);
   const [tempName, setTempName] = useState("");
@@ -55,9 +53,6 @@ export default function CustomTabBar() {
 
   const addColorModal = useAnchoredModalReanimated();
 
-  const setShowPaletteFromChild = () => {
-    setShowPalette((v) => !v);
-  };
   useEffect(() => {
     if (colorArray.length > 0 && !tempColor) {
       setTempColor(colorArray[0].color);
@@ -75,7 +70,7 @@ export default function CustomTabBar() {
     <View
       style={{
         flexDirection: "row",
-        height: 44 + insets.bottom,
+        height: 52 + insets.bottom,
         paddingBottom: insets.bottom,
         borderTopWidth: 1,
         borderColor: "#ddd",
@@ -104,11 +99,12 @@ export default function CustomTabBar() {
         }}
         style={{ marginLeft: "auto" }}
       >
-        {!isAddOrDetailScreen ? (
+        {/* {!isAddOrDetailScreen ? (
           <SquarePen size={28} />
         ) : (
           <SquareCheckBig size={28} />
-        )}
+        )} */}
+        <BlurMaskActionIcon isAddOrDetailScreen={isAddOrDetailScreen} />
       </TouchableOpacity>
       {addColorModal.visible && (
         <Portal>
