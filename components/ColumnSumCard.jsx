@@ -1,13 +1,42 @@
 import { useColumnStore, useColumnSumStore } from "@/context";
 import { usePathname } from "expo-router";
+import {
+  ChevronsLeftRight,
+  ChevronsRightLeft,
+  RotateCcw,
+} from "lucide-react-native";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, Text, TextInput, View } from "react-native";
+import {
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, {
+  Easing,
+  interpolate,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import CustomKeypadAdvanced from "./CustomKeypadAdvanced";
 
 const EDITABLE_ROWS = [
-  { key: "tare", label: "Tru bi" },
-  { key: "price", label: "Gia" },
+  { key: "tare", label: "trừ bì", title: "Trừ bì:" },
+  { key: "price", label: "giá", title: "Giá:" },
 ];
+const MENU_CLOSED_WIDTH = 28;
+const MENU_CLOSED_HEIGHT = 16;
+const MENU_OPEN_WIDTH = 66;
+const MENU_OPEN_HEIGHT = 30;
+
+const BTN_CLOSED_SIZE = 0;
+const BTN_OPEN_SIZE = 23;
+const BTN_GAP = 7;
 
 const evaluateMultiplyIfNeeded = (rawValue) => {
   const trimmed = String(rawValue ?? "").trim();
@@ -47,7 +76,7 @@ const evaluateThousandIfNeeded = (rawValue) => {
   return Math.round(decimalValue * 1000);
 };
 
-const ColumnSumCard = () => {
+const ColumnSumCard = ({ rowWidth = 0, handleResetColumn }) => {
   const colIdx = "sum";
   const sumsByCol = useColumnSumStore((state) => state.sumsByCol);
   const formSum = useColumnSumStore((state) => state.formSum);
@@ -71,6 +100,8 @@ const ColumnSumCard = () => {
 
   const [activeInputIdx, setActiveInputIdx] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState(true);
   const inputRefs = useRef({});
 
   const tareTimerRef = useRef(null);
@@ -206,6 +237,7 @@ const ColumnSumCard = () => {
   }, [activeRow, updateActiveValue]);
 
   const handleResetForm = useCallback(() => {
+    handleResetColumn();
     clearTareTimer();
     clearPriceTimer();
     latestTareRef.current = "";
@@ -316,40 +348,153 @@ const ColumnSumCard = () => {
       isKeyboardVisible && isActiveColumn && activeInputIdx === rowIdx;
 
     return (
-      <View key={row.key} style={{}}>
+      <View
+        key={row.key}
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          borderRadius: 10,
+          alignItems: "center",
+          marginBottom: 4,
+        }}
+      >
+        {!isCompact && <Text style={{ paddingLeft: 5 }}>{row.title}</Text>}
         <TextInput
           ref={(el) => {
             inputRefs.current[row.key] = el;
           }}
           onFocus={() => handleInputFocus(rowIdx)}
           style={{
+            width: !isCompact ? "40%" : "100%",
             height: 28,
+            paddingHorizontal: 5,
             borderWidth: 2,
             borderColor: isActive ? "#333" : "transparent",
             borderRadius: 10,
             paddingBottom: 0,
             paddingTop: 0,
-            paddingRight: 10,
-            marginBottom: 4,
+
             fontSize: 16,
             backgroundColor: "#fff",
             color: "#333333",
             fontWeight: "500",
           }}
-          placeholder={`Nhập ${row.label.toLowerCase()}`}
+          placeholder={`Nhập ${row.label}`}
           placeholderTextColor="#aaa"
           value={displayValue}
           showSoftInputOnFocus={false}
           contextMenuHidden={true}
           selectTextOnFocus={false}
           caretHidden={true}
+          textAlign={!isCompact ? "right" : "left"}
         />
       </View>
     );
   };
 
+  const openProgress = useSharedValue(0);
+  const scaleProgress = useSharedValue(1);
+
+  useEffect(() => {
+    openProgress.value = withTiming(menuOpen ? 1 : 0, {
+      duration: 350,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+    });
+  }, [menuOpen, openProgress]);
+
+  useEffect(() => {
+    scaleProgress.value = withTiming(isCompact ? 1 : 0, {
+      duration: 280,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+    });
+  }, [isCompact, scaleProgress]);
+
+  const containerAnimStyle = useAnimatedStyle(() => ({
+    width: interpolate(
+      openProgress.value,
+      [0, 1],
+      [MENU_CLOSED_WIDTH, MENU_OPEN_WIDTH],
+    ),
+    height: interpolate(
+      openProgress.value,
+      [0, 1],
+      [MENU_CLOSED_HEIGHT, MENU_OPEN_HEIGHT],
+    ),
+  }));
+
+  const dotsAnimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(openProgress.value, [0, 0.45], [1, 0]),
+    width: interpolate(openProgress.value, [0, 1], [20, 0]),
+    transform: [{ scale: interpolate(openProgress.value, [0, 1], [1, 0.3]) }],
+  }));
+
+  const firstButtonAnimStyle = useAnimatedStyle(() => {
+    const size = interpolate(
+      openProgress.value,
+      [0, 1],
+      [BTN_CLOSED_SIZE, BTN_OPEN_SIZE],
+    );
+    return {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      opacity: openProgress.value,
+      transform: [{ scale: interpolate(openProgress.value, [0, 1], [0.4, 1]) }],
+    };
+  });
+
+  const actionButtonAnimStyle = useAnimatedStyle(() => {
+    const size = interpolate(
+      openProgress.value,
+      [0, 1],
+      [BTN_CLOSED_SIZE, BTN_OPEN_SIZE],
+    );
+    return {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      marginLeft: interpolate(openProgress.value, [0, 1], [0, BTN_GAP]),
+      opacity: openProgress.value,
+      transform: [{ scale: interpolate(openProgress.value, [0, 1], [0.4, 1]) }],
+    };
+  });
+
+  const cardWidthAnimStyle = useAnimatedStyle(() => {
+    if (!rowWidth) return {};
+    return {
+      width: interpolate(
+        scaleProgress.value,
+        [0, 1],
+        [rowWidth, Math.floor(rowWidth * 0.48)],
+      ),
+    };
+  });
+
+  const handleRefreshCurrentColumn = () => {
+    setMenuOpen(false);
+    clearTareTimer();
+    clearPriceTimer();
+    latestTareRef.current = "";
+    latestPriceRef.current = "";
+    resetFormSum();
+  };
+
+  const handleScaleSumColumn = () => {
+    setIsCompact((prev) => !prev);
+    setMenuOpen(false);
+  };
+  console.log("ColumnCard Sum rerender");
   return (
-    <View style={{ width: "48%", marginBottom: 10 }}>
+    <Animated.View
+      layout={LinearTransition.duration(260)}
+      style={[
+        {
+          width: isCompact ? "48%" : "100%",
+          marginBottom: 10,
+        },
+        cardWidthAnimStyle,
+      ]}
+    >
       <View
         style={{
           width: "100%",
@@ -366,8 +511,147 @@ const ColumnSumCard = () => {
           shadowRadius: 2,
           marginBottom: 10,
           justifyContent: "space-between",
+          overflow: "hidden",
         }}
       >
+        {menuOpen && (
+          <Pressable
+            onPress={() => setMenuOpen(false)}
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                backgroundColor: "rgba(255,255,255, 0.6)",
+                zIndex: 15,
+              },
+            ]}
+          />
+        )}
+        <View
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            zIndex: 20,
+          }}
+        >
+          <Animated.View
+            style={[
+              {
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#DFE3E6",
+                borderRadius: 14,
+                overflow: "hidden",
+                paddingHorizontal: 4,
+              },
+              containerAnimStyle,
+            ]}
+          >
+            <Animated.View
+              pointerEvents={menuOpen ? "none" : "auto"}
+              style={[
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                },
+                dotsAnimStyle,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => setMenuOpen(true)}
+                hitSlop={15}
+                activeOpacity={0.7}
+                style={{
+                  width: "100%",
+                  height: 20,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                }}
+              >
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 2.5,
+                    backgroundColor: "#2b9a50",
+                  }}
+                />
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 2.5,
+                    backgroundColor: "#72bfff",
+                  }}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View
+              pointerEvents={menuOpen ? "auto" : "none"}
+              style={[
+                {
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#2b9a50",
+                  overflow: "hidden",
+                },
+                firstButtonAnimStyle,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={handleScaleSumColumn}
+                hitSlop={{ top: 6, bottom: 6, left: 15, right: 0 }}
+                activeOpacity={0.75}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {isCompact ? (
+                  <ChevronsLeftRight size={16} color="#333" strokeWidth={3.5} />
+                ) : (
+                  <ChevronsRightLeft size={16} color="#333" strokeWidth={3.5} />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View
+              pointerEvents={menuOpen ? "auto" : "none"}
+              style={[
+                {
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#72bfff",
+                  overflow: "hidden",
+                },
+                actionButtonAnimStyle,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={handleRefreshCurrentColumn}
+                hitSlop={{ top: 6, bottom: 6, left: 0, right: 15 }}
+                activeOpacity={0.75}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <RotateCcw size={16} color="#333" strokeWidth={3.5} />
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        </View>
+
         <Text
           style={{
             fontSize: 14,
@@ -379,32 +663,82 @@ const ColumnSumCard = () => {
         >
           Tong
         </Text>
-        <Text
+        <View
           style={{
-            fontSize: 14,
-            fontWeight: "bold",
-            color: "#333",
-            marginBottom: 8,
-            textAlign: "left",
-            paddingLeft: 10,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            backgroundColor: "#DFE3E6",
+            borderRadius: 10,
+            alignItems: "center",
+            paddingHorizontal: 5,
+            marginBottom: 4,
+            height: 28,
           }}
         >
-          {grandTotal}
-        </Text>
+          {!isCompact && (
+            <Text style={{ textAlign: "center" }}>Tổng khối lượng: </Text>
+          )}
+          <TextInput
+            style={{
+              flex: 1,
+              height: 25,
+              borderWidth: 2,
+              borderColor: "transparent",
+              borderRadius: 10,
+              paddingBottom: 0,
+              paddingTop: 0,
+              fontSize: 16,
+              backgroundColor: "#DFE3E6",
+              color: "#333333",
+              fontWeight: "500",
+            }}
+            value={String(grandTotal)}
+            showSoftInputOnFocus={false}
+            contextMenuHidden={true}
+            selectTextOnFocus={false}
+            caretHidden={true}
+            textAlign={!isCompact ? "right" : "left"}
+            editable={false}
+          />
+        </View>
 
         {renderEditableRow(EDITABLE_ROWS[0], 0)}
-        <Text
+
+        <View
           style={{
-            fontSize: 14,
-            fontWeight: "bold",
-            color: "#333",
-            marginBottom: 8,
-            textAlign: "left",
-            paddingLeft: 10,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            backgroundColor: "#DFE3E6",
+            borderRadius: 10,
+            alignItems: "center",
+            paddingHorizontal: 5,
+            marginBottom: 4,
+            height: 28,
           }}
         >
-          {netWeight}
-        </Text>
+          {!isCompact && <Text>Khối lượng tịnh:</Text>}
+          <TextInput
+            style={{
+              height: 25,
+              borderWidth: 2,
+              borderColor: "transparent",
+              borderRadius: 10,
+              paddingBottom: 0,
+              paddingTop: 0,
+              fontSize: 16,
+              backgroundColor: "#DFE3E6",
+              color: "#333333",
+              fontWeight: "500",
+            }}
+            value={String(netWeight)}
+            showSoftInputOnFocus={false}
+            contextMenuHidden={true}
+            selectTextOnFocus={false}
+            caretHidden={true}
+            textAlign={!isCompact ? "right" : "left"}
+            editable={false}
+          />
+        </View>
         {renderEditableRow(EDITABLE_ROWS[1], 1)}
         <Text
           style={{
@@ -453,7 +787,7 @@ const ColumnSumCard = () => {
           setIsKeyboardVisible={setIsKeyboardVisible}
         />
       )}
-    </View>
+    </Animated.View>
   );
 };
 

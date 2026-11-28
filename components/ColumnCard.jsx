@@ -21,6 +21,7 @@ import {
 import Animated, {
   Easing,
   interpolate,
+  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -228,7 +229,6 @@ const ColumnCard = ({
     };
   }, [columnData, colIdx]);
 
-  // Animation mở rộng / thu nhỏ mượt đồng bộ cho khung và 2 nút
   const openProgress = useSharedValue(0);
 
   useEffect(() => {
@@ -287,270 +287,273 @@ const ColumnCard = ({
       transform: [{ scale: interpolate(openProgress.value, [0, 1], [0.4, 1]) }],
     };
   });
+  console.log("ColumnCard rerender", colIdx);
 
   return (
-    <View
-      style={{
-        width: "48%",
-        marginBottom: 10,
-        height: 248,
-      }}
+    <Animated.View
+      layout={LinearTransition.duration(260)}
+      style={{ width: "48%" }}
     >
       <View
         style={{
           width: "100%",
-          height: "100%",
-          backgroundColor: "#fff",
-          borderRadius: 18,
-          padding: 9,
-          borderWidth: 1,
-          borderColor: "#e1e4e8",
-          elevation: 2,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-          overflow: "hidden",
+          marginBottom: 10,
+          height: 248,
         }}
       >
-        {/* Lớp nền trong suốt: bấm ra ngoài để đóng menu */}
-        {menuOpen && (
-          <Pressable
-            onPress={() => setMenuOpen(false)}
-            style={[
-              StyleSheet.absoluteFillObject,
-              {
-                backgroundColor: "rgba(255,255,255, 0.6)",
-                zIndex: 15,
-              },
-            ]}
-          />
-        )}
-
-        {/* Menu mở rộng / thu nhỏ mượt */}
         <View
           style={{
-            position: "absolute",
-            top: 8,
-            left: 8,
-            zIndex: 20,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#fff",
+            borderRadius: 18,
+            padding: 9,
+            borderWidth: 1,
+            borderColor: "#e1e4e8",
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 2,
+            overflow: "hidden",
           }}
         >
-          <Animated.View
-            style={[
-              {
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#a2a2a2c1",
-                borderRadius: 14,
-                overflow: "hidden",
-                paddingHorizontal: 4,
-              },
-              containerAnimStyle,
-            ]}
+          {menuOpen && (
+            <Pressable
+              onPress={() => setMenuOpen(false)}
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  backgroundColor: "rgba(255,255,255, 0.6)",
+                  zIndex: 15,
+                },
+              ]}
+            />
+          )}
+          <View
+            style={{
+              position: "absolute",
+              top: 8,
+              left: 8,
+              zIndex: 20,
+            }}
           >
             <Animated.View
-              pointerEvents={menuOpen ? "none" : "auto"}
               style={[
                 {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
+                  backgroundColor: "#DFE3E6",
+                  borderRadius: 14,
                   overflow: "hidden",
+                  paddingHorizontal: 4,
                 },
-                dotsAnimStyle,
+                containerAnimStyle,
               ]}
             >
-              <TouchableOpacity
-                onPress={() => setMenuOpen(true)}
-                hitSlop={10}
-                activeOpacity={0.7}
-                style={{
-                  width: "100%",
-                  height: 20,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 4,
-                }}
+              <Animated.View
+                pointerEvents={menuOpen ? "none" : "auto"}
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  },
+                  dotsAnimStyle,
+                ]}
               >
-                <View
+                <TouchableOpacity
+                  onPress={() => setMenuOpen(true)}
+                  hitSlop={10}
+                  activeOpacity={0.7}
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 2.5,
-                    backgroundColor: "#cf222e",
+                    width: "100%",
+                    height: 20,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
                   }}
-                ></View>
-                <View
+                >
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 2.5,
+                      backgroundColor: "#fa6f7d",
+                    }}
+                  ></View>
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 2.5,
+                      backgroundColor: "#72bfff",
+                    }}
+                  ></View>
+                </TouchableOpacity>
+              </Animated.View>
+              <Animated.View
+                pointerEvents={menuOpen ? "auto" : "none"}
+                style={[
+                  {
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#fa6f7d",
+                    overflow: "hidden",
+                  },
+                  firstButtonAnimStyle,
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={handleCloseCurrentColumn}
+                  hitSlop={{ top: 6, bottom: 6, left: 15, right: 0 }}
+                  activeOpacity={0.75}
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 2.5,
-                    backgroundColor: "#0969da",
+                    width: "100%",
+                    height: "100%",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
-                ></View>
-              </TouchableOpacity>
-            </Animated.View>
-            <Animated.View
-              pointerEvents={menuOpen ? "auto" : "none"}
-              style={[
-                {
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#cf222e",
-                  overflow: "hidden",
-                },
-                firstButtonAnimStyle,
-              ]}
-            >
-              <TouchableOpacity
-                onPress={handleCloseCurrentColumn}
-                hitSlop={{ top: 6, bottom: 6, left: 15, right: 0 }}
-                activeOpacity={0.75}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                >
+                  <X size={16} color="#333" strokeWidth={3.5} />
+                </TouchableOpacity>
+              </Animated.View>
+
+              <Animated.View
+                pointerEvents={menuOpen ? "auto" : "none"}
+                style={[
+                  {
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#72bfff",
+                    overflow: "hidden",
+                  },
+                  actionButtonAnimStyle,
+                ]}
               >
-                <X size={16} color="#333" strokeWidth={3.5} />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleRefreshCurrentColumn}
+                  hitSlop={{ top: 6, bottom: 6, left: 0, right: 15 }}
+                  activeOpacity={0.75}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <RotateCcw size={16} color="#333" strokeWidth={3.5} />
+                </TouchableOpacity>
+              </Animated.View>
             </Animated.View>
+          </View>
 
-            <Animated.View
-              pointerEvents={menuOpen ? "auto" : "none"}
-              style={[
-                {
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#286fc0",
-                  overflow: "hidden",
-                },
-                actionButtonAnimStyle,
-              ]}
-            >
-              <TouchableOpacity
-                onPress={handleRefreshCurrentColumn}
-                hitSlop={{ top: 6, bottom: 6, left: 0, right: 15 }}
-                activeOpacity={0.75}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <RotateCcw size={16} color="#333" strokeWidth={3.5} />
-              </TouchableOpacity>
-            </Animated.View>
-          </Animated.View>
-        </View>
-
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: "bold",
-            color: "#333",
-            marginBottom: 8,
-            textAlign: "center",
-          }}
-        >
-          Cụm {colIdx + 1}
-        </Text>
-
-        {columnData.inputs &&
-          columnData.inputs.map((inputItem, inputIdx) => {
-            const isActive =
-              isKeyboardVisible &&
-              activeInputIndex === inputIdx &&
-              isActiveColumn;
-            const key = `${colIdx}-${inputIdx}`;
-
-            return (
-              <TextInput
-                key={key}
-                ref={(el) => (inputRefs.current[key] = el)}
-                style={{
-                  height: 28,
-                  borderWidth: 2,
-                  borderColor: isActive ? "#333" : "transparent",
-                  borderRadius: 10,
-                  paddingBottom: 0,
-                  paddingTop: 0,
-                  paddingLeft: 10,
-                  textAlignVertical: "center",
-                  marginBottom: 4,
-                  fontSize: 16,
-                  backgroundColor: inputItem.weight
-                    ? inputItem.worker_color === DEFAULT_WORKER_COLOR
-                      ? "#fff"
-                      : inputItem.worker_color
-                    : "#fff",
-                  color: "#333333",
-                  fontWeight: "600",
-                }}
-                placeholder={`Ô ${inputIdx + 1}`}
-                placeholderTextColor="#aaa"
-                keyboardType="numeric"
-                value={inputItem.weight || ""}
-                showSoftInputOnFocus={false}
-                contextMenuHidden={true}
-                selectTextOnFocus={false}
-                caretHidden={true}
-                onFocus={() => handleInputFocus(inputIdx, inputItem)}
-              />
-            );
-          })}
-
-        <View
-          style={{
-            marginTop: 4,
-            padding: 6,
-            backgroundColor: "#e6f4ea",
-            borderRadius: 6,
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
           <Text
             style={{
               fontSize: 14,
-              color: "#137333",
-              fontWeight: "600",
-            }}
-          >
-            Kết quả:
-          </Text>
-          <Text
-            style={{
-              fontSize: 16,
               fontWeight: "bold",
-              color: "#137333",
+              color: "#333",
+              marginBottom: 8,
+              textAlign: "center",
             }}
           >
-            {columnData.result || "0"}
+            Cụm {colIdx + 1}
           </Text>
-        </View>
-      </View>
 
-      {isKeyboardVisible && isActiveColumn && (
-        <CustomKeypadAdvanced
-          onKeyPress={handleKeyPress}
-          onDelete={handleDelete}
-          onPrevInput={handlePrevInput}
-          onNextInput={handleNextInput}
-          onHideKeyboard={hideKeyboard}
-          isAdColumn={addColumn}
-          isReset={resetColumn}
-          isKeyboardVisible={isKeyboardVisible}
-          setIsKeyboardVisible={setIsKeyboardVisible}
-        />
-      )}
-    </View>
+          {columnData.inputs &&
+            columnData.inputs.map((inputItem, inputIdx) => {
+              const isActive =
+                isKeyboardVisible &&
+                activeInputIndex === inputIdx &&
+                isActiveColumn;
+              const key = `${colIdx}-${inputIdx}`;
+
+              return (
+                <TextInput
+                  key={key}
+                  ref={(el) => (inputRefs.current[key] = el)}
+                  style={{
+                    height: 28,
+                    borderWidth: 2,
+                    borderColor: isActive ? "#333" : "transparent",
+                    borderRadius: 10,
+                    paddingBottom: 0,
+                    paddingTop: 0,
+                    paddingLeft: 10,
+                    textAlignVertical: "center",
+                    marginBottom: 4,
+                    fontSize: 16,
+                    backgroundColor: inputItem.weight
+                      ? inputItem.worker_color === DEFAULT_WORKER_COLOR
+                        ? "#fff"
+                        : inputItem.worker_color
+                      : "#fff",
+                    color: "#333333",
+                    fontWeight: "600",
+                  }}
+                  placeholder={`Ô ${inputIdx + 1}`}
+                  placeholderTextColor="#aaa"
+                  keyboardType="numeric"
+                  value={inputItem.weight || ""}
+                  showSoftInputOnFocus={false}
+                  contextMenuHidden={true}
+                  selectTextOnFocus={false}
+                  caretHidden={true}
+                  onFocus={() => handleInputFocus(inputIdx, inputItem)}
+                />
+              );
+            })}
+
+          <View
+            style={{
+              marginTop: 4,
+              padding: 6,
+              backgroundColor: "#e6f4ea",
+              borderRadius: 6,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#137333",
+                fontWeight: "600",
+              }}
+            >
+              Kết quả:
+            </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "bold",
+                color: "#137333",
+              }}
+            >
+              {columnData.result || "0"}
+            </Text>
+          </View>
+        </View>
+
+        {isKeyboardVisible && isActiveColumn && (
+          <CustomKeypadAdvanced
+            onKeyPress={handleKeyPress}
+            onDelete={handleDelete}
+            onPrevInput={handlePrevInput}
+            onNextInput={handleNextInput}
+            onHideKeyboard={hideKeyboard}
+            isAdColumn={addColumn}
+            isReset={resetColumn}
+            isKeyboardVisible={isKeyboardVisible}
+            setIsKeyboardVisible={setIsKeyboardVisible}
+          />
+        )}
+      </View>
+    </Animated.View>
   );
 };
 
